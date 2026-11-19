@@ -79,8 +79,6 @@ export const FLOWER_COLORS: Record<FlowerType, ColorOption[]> = {
     opt('babysBreath', 'Blue', { petal: '#a9c6f0', petal2: '#e3eefb' }),
   ],
   eucalyptus: [opt('eucalyptus', 'Silver green')],
-  fern: [opt('fern', 'Green')],
-  ruscus: [opt('ruscus', 'Green')],
   lavender: [opt('lavender', 'Purple')],
   jasmine: [opt('jasmine', 'White')],
 }

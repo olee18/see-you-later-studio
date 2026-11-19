@@ -9,7 +9,7 @@ import { cylGeo, petalGeo, sphereGeo } from '../three/geometry'
 
 export type FlowerType =
   | 'rose' | 'tulip' | 'peony' | 'sunflower' | 'hydrangea' | 'lily' | 'carnation'
-  | 'orchid' | 'gerbera' | 'babysBreath' | 'eucalyptus' | 'fern' | 'ruscus'
+  | 'orchid' | 'gerbera' | 'babysBreath' | 'eucalyptus'
   | 'daisy' | 'chrysanthemum' | 'ranunculus' | 'lisianthus' | 'lavender' | 'jasmine'
 
 export type Role = 'petal' | 'center' | 'leaf' | 'stem' | 'accent'
@@ -351,48 +351,6 @@ const eucalyptus: FlowerDef['build'] = (open, rnd) => {
   ]
 }
 
-const ruscus: FlowerDef['build'] = (open, rnd) => {
-  const leaves: THREE.Matrix4[] = []
-  const n = 14
-  for (let i = 0; i < n; i++) {
-    const t = i / (n - 1)
-    const len = lerp(0.042, 0.026, t) * (0.8 + 0.2 * open)
-    leaves.push(petalM(i * Math.PI + (rnd() - 0.5) * 0.5, lerp(55, 35, t) * DEG, 0.003, -0.26 + t * 0.32, len, len * 0.4, (rnd() - 0.5) * 0.5))
-  }
-  return [
-    { geo: petalGeo('leaf', 0.15, -0.08), role: 'petal', matrices: leaves },
-    { geo: cylGeo(), role: 'stem', matrices: [segM(V(0, -0.01, 0), V(-0.004, 0.075, 0.002), 0.002)] },
-  ]
-}
-
-const fern: FlowerDef['build'] = (open, rnd) => {
-  const P = (s: number) => V(0.07 * s * s, -0.2 + 0.3 * s, 0.01 * Math.sin(s * 3))
-  const segs: THREE.Matrix4[] = []
-  const steps = 10
-  for (let i = 0; i < steps; i++) segs.push(segM(P(i / steps), P((i + 1) / steps), lerp(0.0018, 0.0008, i / steps)))
-  const pinnae: THREE.Matrix4[] = []
-  for (let s = 0.08; s < 0.98; s += 0.042) {
-    const T = P(s + 0.01).sub(P(s - 0.01)).normalize()
-    const S = V(0, 0, 1)
-    const N = V().crossVectors(T, S).normalize()
-    const len = lerp(0.05, 0.012, s) * (0.7 + 0.3 * open)
-    for (const side of [1, -1]) {
-      const Y = S.clone().multiplyScalar(side).lerp(T, 0.35 + rnd() * 0.1).normalize()
-      const Z = N.clone().multiplyScalar(-1).add(V(0, 0.3, 0)).normalize()
-      const X = V().crossVectors(Y, Z).normalize()
-      const Zo = V().crossVectors(X, Y)
-      const m = new THREE.Matrix4().makeBasis(X, Y, Zo)
-      m.scale(V(len * 0.26, len, len * 0.26))
-      m.setPosition(P(s))
-      pinnae.push(m)
-    }
-  }
-  return [
-    { geo: petalGeo('leaf', 0.3, -0.12), role: 'petal', matrices: pinnae },
-    { geo: cylGeo(), role: 'stem', matrices: segs },
-  ]
-}
-
 const daisy: FlowerDef['build'] = (open, rnd) => [
   { geo: petalGeo('strap', 0.15, -0.02), role: 'petal', matrices: ring(open, rnd, { n: 22, len: [0.03, 0.03], width: [0.22, 0.22], phiClosed: [20, 20], phiOpen: [86, 86], radius: [0.009, 0.009], jitter: 0.08 }) },
   { geo: sphereGeo(), role: 'center', matrices: [blobM(V(0, 0.003, 0), 0.01, 0.006, 0.01)] },
@@ -487,8 +445,6 @@ export const FLOWERS: Record<FlowerType, FlowerDef> = {
   lisianthus: { type: 'lisianthus', name: 'Lisianthus', latin: 'Eustoma', category: 'flower', colors: { petal: '#fbf7fb', petal2: '#8e5aa8', gradient: 0.75, center: '#d9d48a' }, headRadius: 0.045, heightBias: 0.02, centerBias: 0.45, glyph: { petals: 5, kind: 'round' }, build: lisianthus },
   babysBreath: { type: 'babysBreath', name: "Baby's Breath", latin: 'Gypsophila', category: 'filler', colors: { petal: '#fbfaf4', petal2: '#ffffff', gradient: 0.2, center: '#e8e4d0' }, headRadius: 0.06, heightBias: 0.03, centerBias: 0.8, glyph: { petals: 0, kind: 'spray' }, build: babysBreath },
   eucalyptus: { type: 'eucalyptus', name: 'Eucalyptus', latin: 'Eucalyptus', category: 'filler', colors: { petal: '#8aa597', petal2: '#bccdc2', gradient: 0.4, center: '#6f8a7c' }, headRadius: 0.05, heightBias: 0.05, centerBias: 0.75, glyph: { petals: 0, kind: 'leafy' }, build: eucalyptus },
-  fern: { type: 'fern', name: 'Fern', latin: 'Rumohra', category: 'filler', colors: { petal: '#4c7a42', petal2: '#7fa66b', gradient: 0.5, center: '#3f6a35' }, headRadius: 0.06, heightBias: 0.03, centerBias: 0.9, glyph: { petals: 0, kind: 'frond' }, build: fern },
-  ruscus: { type: 'ruscus', name: 'Ruscus', latin: 'Ruscus', category: 'filler', colors: { petal: '#5b8a48', petal2: '#93b673', gradient: 0.35, center: '#4a7038' }, headRadius: 0.045, heightBias: 0.05, centerBias: 0.7, glyph: { petals: 0, kind: 'leafy' }, build: ruscus },
   lavender: { type: 'lavender', name: 'Lavender', latin: 'Lavandula', category: 'filler', colors: { petal: '#8f7cc4', petal2: '#b9a9e0', gradient: 0.5, center: '#6f5aa8' }, headRadius: 0.03, heightBias: 0.07, centerBias: 0.85, glyph: { petals: 0, kind: 'spike' }, build: lavender },
   jasmine: { type: 'jasmine', name: 'Jasmine', latin: 'Jasminum', category: 'filler', colors: { petal: '#fffdf6', petal2: '#ffffff', gradient: 0.15, center: '#f1e7b8' }, headRadius: 0.05, heightBias: 0.03, centerBias: 0.8, glyph: { petals: 0, kind: 'spray' }, build: jasmine },
 }

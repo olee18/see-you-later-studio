@@ -168,8 +168,6 @@ const FLOWER_NAMES: Record<FlowerType, Tr> = {
   gerbera: ['Gerbera', 'เยอบีร่า', 'ເຢີບີຣາ'],
   babysBreath: ["Baby's Breath", 'ยิปโซ', 'ຢິບໂຊ'],
   eucalyptus: ['Eucalyptus', 'ยูคาลิปตัส', 'ຢູຄາລິບຕັສ'],
-  fern: ['Fern', 'เฟิร์น', 'ເຟີນ'],
-  ruscus: ['Ruscus', 'รัสคัส', 'ຣັສຄັສ'],
   daisy: ['Daisy', 'เดซี่', 'ເດຊີ່'],
   chrysanthemum: ['Chrysanthemum', 'เบญจมาศ', 'ເບັນຈະມາດ'],
   ranunculus: ['Ranunculus', 'รานันคูลัส', 'ຣານັນຄູລັສ'],
