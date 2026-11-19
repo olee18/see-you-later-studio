@@ -105,12 +105,6 @@ const STR = {
   shape_cone: ['Tall cone', 'ทรงกรวยสูง', 'ຊົງກວຍສູງ'],
   shape_handtied: ['Hand-tied', 'ช่อมัดมือ', 'ຊໍ່ມັດມື'],
   shape_posy: ['Round posy', 'ช่อกลมขอบลูกไม้', 'ຊໍ່ມົນຂອບລູກໄມ້'],
-  // occasions (ready-made filter)
-  occ_all: ['All', 'ทั้งหมด', 'ທັງໝົດ'],
-  occ_love: ['Love', 'ความรัก', 'ຄວາມຮັກ'],
-  occ_celebrate: ['Celebrate', 'แสดงความยินดี', 'ສະແດງຄວາມຍິນດີ'],
-  occ_family: ['Family', 'ครอบครัว', 'ຄອບຄົວ'],
-  occ_elegant: ['Elegant', 'หรูหรา', 'ຫຼູຫຼາ'],
   // stands
   stand: ['Bouquet stand', 'ขาตั้งช่อ', 'ຂາຕັ້ງຊໍ່'],
   stand_gold: ['Gold stand', 'ขาตั้งสีทอง', 'ຂາຕັ້ງສີຄຳ'],
@@ -227,20 +221,6 @@ const STYLE_NAMES: Record<string, Tr> = {
   'red-heart': ['Red Rose Heart', 'หัวใจกุหลาบแดง', 'ຫົວໃຈກຸຫຼາບແດງ'],
   'classic-red': ['Classic Red', 'กุหลาบแดงคลาสสิก', 'ກຸຫຼາບແດງຄລາສສິກ'],
   'peony-luxe': ['Peony Luxury', 'โบตั๋นหรู', 'ໂບຕັ໋ນຫຼູຫຼາ'],
-  'pastel-garden': ['Pastel Garden', 'สวนพาสเทล', 'ສວນພາສເທລ'],
-  'sky-blue': ['Sky Blue', 'ฟ้าใส', 'ຟ້າໃສ'],
-  'pure-white': ['Pure White', 'ขาวบริสุทธิ์', 'ຂາວບໍລິສຸດ'],
-  sunshine: ['Sunshine', 'สดใสซันไชน์', 'ແສງແດດສົດໃສ'],
-  'pink-cloud': ['Pink Cloud', 'เมฆชมพู', 'ເມກສີບົວ'],
-  proposal: ['Will You Marry Me', 'ขอแต่งงาน', 'ຂໍແຕ່ງງານ'],
-  'sunflower-joy': ['Sunflower Joy', 'ทานตะวันสดใส', 'ທານຕະເວັນສົດໃສ'],
-  graduation: ['Graduation Day', 'รับปริญญา', 'ຮັບປະລິນຍາ'],
-  'tulip-rainbow': ['Tulip Rainbow', 'ทิวลิปหลากสี', 'ທິວລິບຫຼາກສີ'],
-  'mother-day': ['For Mum', 'สำหรับแม่', 'ສຳລັບແມ່'],
-  'peach-sunset': ['Peach Sunset', 'พีชยามเย็น', 'ພີຊຍາມແລງ'],
-  'white-green': ['White & Green', 'ขาวเขียวมินิมอล', 'ຂາວຂຽວມິນິມອນ'],
-  'lavender-dream': ['Lavender Dream', 'ลาเวนเดอร์ดรีม', 'ລາເວນເດີດຣີມ'],
-  'orchid-elegance': ['Orchid Elegance', 'กล้วยไม้หรู', 'ດອກເອື້ອງຫຼູຫຼາ'],
 }
 
 const KEY = 'bloom-studio:lang'

@@ -17,12 +17,8 @@ export interface MixEntry {
   colors?: Partial<StemColors>
 }
 
-export type Occasion = 'love' | 'celebrate' | 'family' | 'elegant'
-export const OCCASIONS: Occasion[] = ['love', 'celebrate', 'family', 'elegant']
-
 export interface StyleDef {
   id: string
-  occasion: Occasion
   name: string
   thai: string
   layout: Layout
@@ -92,175 +88,33 @@ export const RIBBONS: { id: string; name: string; color: string }[] = [
 const pinkRose = { petal: '#f29aae', petal2: '#fde2e9', gradient: 0.55, center: '#b84a63' }
 const lightPinkRose = { petal: '#f7c1cc', petal2: '#fff0f3', gradient: 0.5, center: '#d27b8c' }
 const redRose = { petal: '#a8102c', petal2: '#d22e4a', gradient: 0.3, center: '#5e0a1a' }
-const whiteRose = { petal: '#fbf6ee', petal2: '#ffffff', gradient: 0.3, center: '#e9dcc6' }
-const peachRose = { petal: '#f6b49a', petal2: '#fde4d6', gradient: 0.5, center: '#c8735a' }
 const BB_WHITE = { petal: '#fbfaf4', petal2: '#ffffff' }
 
 export const STYLES: StyleDef[] = [
   {
-    id: 'sweet-pink', occasion: 'love', name: 'Sweet Pink Roses', thai: 'กุหลาบชมพูหวาน', layout: 'dome',
+    id: 'sweet-pink', name: 'Sweet Pink Roses', thai: 'กุหลาบชมพูหวาน', layout: 'dome',
     mix: [{ type: 'rose', weight: 3, colors: pinkRose }, { type: 'rose', weight: 1, colors: lightPinkRose }],
     wrap: 'pearl', ribbon: '#f2a7b8',
   },
   {
-    id: 'red-heart', occasion: 'love', name: 'Red Rose Heart', thai: 'หัวใจกุหลาบแดง', layout: 'heart', defaultSize: 'L',
+    id: 'red-heart', name: 'Red Rose Heart', thai: 'หัวใจกุหลาบแดง', layout: 'heart', defaultSize: 'L',
     mix: [{ type: 'rose', weight: 1, colors: redRose }],
     edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE },
     wrap: 'pink-white', ribbon: '#b3263e',
   },
   {
-    id: 'classic-red', occasion: 'love', name: 'Classic Red', thai: 'กุหลาบแดงคลาสสิก', layout: 'ring',
+    id: 'classic-red', name: 'Classic Red', thai: 'กุหลาบแดงคลาสสิก', layout: 'ring',
     mix: [{ type: 'rose', weight: 1, colors: redRose }],
     edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.3 },
     wrap: 'black', ribbon: '#b3263e',
   },
   {
-    id: 'peony-luxe', occasion: 'elegant', name: 'Peony Luxury', thai: 'โบตั๋นหรู', layout: 'dome',
+    id: 'peony-luxe', name: 'Peony Luxury', thai: 'โบตั๋นหรู', layout: 'dome',
     mix: [
       { type: 'peony', weight: 3, colors: { petal: '#f0a6bb', petal2: '#fde3ea', gradient: 0.6 } },
       { type: 'peony', weight: 1, colors: { petal: '#f7cad3', petal2: '#fff2f4', gradient: 0.55 } },
     ],
     wrap: 'pearl', ribbon: '#f2a7b8',
-  },
-  {
-    id: 'pastel-garden', occasion: 'family', name: 'Pastel Garden', thai: 'สวนพาสเทล', layout: 'garden',
-    mix: [
-      { type: 'rose', weight: 3, colors: lightPinkRose },
-      { type: 'rose', weight: 1, colors: peachRose },
-      { type: 'hydrangea', weight: 1, colors: { petal: '#e6c9e9', petal2: '#f7ecf8' } },
-      { type: 'peony', weight: 1, colors: { petal: '#f2b0bd', petal2: '#fde8ec' } },
-      { type: 'carnation', weight: 1, colors: { petal: '#f4c1c9', petal2: '#fff1f3' } },
-    ],
-    accents: [{ type: 'eucalyptus', count: 6 }],
-    wrap: 'blush', ribbon: '#f2a7b8',
-  },
-  {
-    id: 'sky-blue', occasion: 'elegant', name: 'Sky Blue', thai: 'ฟ้าใส', layout: 'garden',
-    mix: [
-      { type: 'rose', weight: 5, colors: whiteRose },
-      { type: 'hydrangea', weight: 1.3, colors: { petal: '#8fb1e6', petal2: '#cfe0f7', center: '#eef3fb' } },
-      { type: 'lisianthus', weight: 1, colors: { petal: '#ffffff', petal2: '#cfe0f7', gradient: 0.4 } },
-      { type: 'babysBreath', weight: 1, colors: BB_WHITE },
-    ],
-    wrap: 'navy', ribbon: '#ffffff',
-  },
-  {
-    id: 'pure-white', occasion: 'elegant', name: 'Pure White', thai: 'ขาวบริสุทธิ์', layout: 'ring',
-    mix: [{ type: 'rose', weight: 1, colors: whiteRose }],
-    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.25 },
-    accents: [{ type: 'eucalyptus', count: 7 }],
-    wrap: 'sage', ribbon: '#ffffff',
-  },
-  {
-    id: 'sunshine', occasion: 'celebrate', name: 'Sunshine', thai: 'สดใสซันไชน์', layout: 'garden',
-    mix: [
-      { type: 'gerbera', weight: 2, colors: { petal: '#ff8a3d', petal2: '#ffc27a' } },
-      { type: 'gerbera', weight: 1, colors: { petal: '#ffd23f', petal2: '#fff1a8' } },
-      { type: 'sunflower', weight: 1 },
-      { type: 'daisy', weight: 1 },
-      { type: 'rose', weight: 1, colors: { petal: '#ffcf4a', petal2: '#fff2a8', gradient: 0.5 } },
-    ],
-    accents: [{ type: 'lavender', count: 6 }],
-    wrap: 'orange', ribbon: '#24324f',
-  },
-  {
-    id: 'pink-cloud', occasion: 'love', name: 'Pink Cloud', thai: 'เมฆชมพู', layout: 'dome',
-    mix: [
-      { type: 'babysBreath', weight: 2, colors: { petal: '#f5b3c8', petal2: '#ffe3ec' } },
-      { type: 'babysBreath', weight: 1, colors: { petal: '#e9a7d6', petal2: '#fbe1f2' } },
-    ],
-    wrap: 'pink-white', ribbon: '#f2a7b8',
-  },
-  // ---- more ready-made bouquets
-  {
-    id: 'proposal', occasion: 'love', name: 'Will You Marry Me', thai: 'ขอแต่งงาน', layout: 'heart', defaultSize: 'XL',
-    mix: [{ type: 'rose', weight: 1, colors: redRose }],
-    edge: { type: 'rose', weight: 1, colors: whiteRose },
-    wrap: 'pearl', ribbon: '#b3263e',
-  },
-  {
-    id: 'sunflower-joy', occasion: 'celebrate', name: 'Sunflower Joy', thai: 'ทานตะวันสดใส', layout: 'garden',
-    mix: [
-      { type: 'sunflower', weight: 3 },
-      { type: 'daisy', weight: 1.5 },
-      { type: 'babysBreath', weight: 1, colors: BB_WHITE },
-    ],
-    accents: [{ type: 'eucalyptus', count: 6 }],
-    wrap: 'kraft', ribbon: '#24324f',
-  },
-  {
-    id: 'graduation', occasion: 'celebrate', name: 'Graduation Day', thai: 'รับปริญญา', layout: 'ring',
-    mix: [
-      { type: 'sunflower', weight: 2 },
-      { type: 'rose', weight: 2, colors: { petal: '#ffcf4a', petal2: '#fff2a8', gradient: 0.5, center: '#c99a1a' } },
-      { type: 'rose', weight: 1, colors: whiteRose },
-    ],
-    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.28 },
-    wrap: 'navy', ribbon: '#e3cfa4',
-  },
-  {
-    id: 'tulip-rainbow', occasion: 'celebrate', name: 'Tulip Rainbow', thai: 'ทิวลิปหลากสี', layout: 'garden',
-    mix: [
-      { type: 'tulip', weight: 1, colors: { petal: '#f4a6b7', petal2: '#fde3ea' } },
-      { type: 'tulip', weight: 1, colors: { petal: '#c8213a', petal2: '#e8576d' } },
-      { type: 'tulip', weight: 1, colors: { petal: '#f6c945', petal2: '#fff2a8' } },
-      { type: 'tulip', weight: 1, colors: { petal: '#fbf8f1', petal2: '#ffffff' } },
-      { type: 'tulip', weight: 1, colors: { petal: '#8e5aa8', petal2: '#c9a7e3' } },
-    ],
-    accents: [{ type: 'ruscus', count: 5 }],
-    wrap: 'pearl', ribbon: '#b9a3e3',
-  },
-  {
-    id: 'mother-day', occasion: 'family', name: "For Mum", thai: 'สำหรับแม่', layout: 'garden',
-    mix: [
-      { type: 'carnation', weight: 3, colors: { petal: '#f29aae', petal2: '#fde2e9' } },
-      { type: 'jasmine', weight: 2 },
-      { type: 'rose', weight: 1, colors: whiteRose },
-    ],
-    accents: [{ type: 'eucalyptus', count: 5 }],
-    wrap: 'blush', ribbon: '#f2a7b8',
-  },
-  {
-    id: 'peach-sunset', occasion: 'family', name: 'Peach Sunset', thai: 'พีชยามเย็น', layout: 'garden',
-    mix: [
-      { type: 'rose', weight: 3, colors: peachRose },
-      { type: 'ranunculus', weight: 2 },
-      { type: 'peony', weight: 1, colors: { petal: '#f4897a', petal2: '#fcd5cc' } },
-      { type: 'lisianthus', weight: 1, colors: { petal: '#fff6ee', petal2: '#f6b49a', gradient: 0.6 } },
-    ],
-    accents: [{ type: 'eucalyptus', count: 6 }],
-    wrap: 'kraft', ribbon: '#e3cfa4',
-  },
-  {
-    id: 'white-green', occasion: 'elegant', name: 'White & Green', thai: 'ขาวเขียวมินิมอล', layout: 'garden',
-    mix: [
-      { type: 'rose', weight: 2, colors: whiteRose },
-      { type: 'calla', weight: 2 },
-      { type: 'lisianthus', weight: 1.5, colors: { petal: '#ffffff', petal2: '#e6f0dc', gradient: 0.5 } },
-    ],
-    accents: [{ type: 'eucalyptus', count: 6 }, { type: 'ruscus', count: 4 }],
-    wrap: 'sage', ribbon: '#9fb58f',
-  },
-  {
-    id: 'lavender-dream', occasion: 'elegant', name: 'Lavender Dream', thai: 'ลาเวนเดอร์ดรีม', layout: 'garden',
-    mix: [
-      { type: 'rose', weight: 3, colors: { petal: '#c9a7e3', petal2: '#efe3f8', gradient: 0.5, center: '#8a62b0' } },
-      { type: 'lisianthus', weight: 2 },
-      { type: 'hydrangea', weight: 1, colors: { petal: '#c8b0e6', petal2: '#efe6f8' } },
-    ],
-    accents: [{ type: 'lavender', count: 7 }],
-    wrap: 'lilac', ribbon: '#ffffff',
-  },
-  {
-    id: 'orchid-elegance', occasion: 'elegant', name: 'Orchid Elegance', thai: 'กล้วยไม้หรู', layout: 'dome',
-    mix: [
-      { type: 'orchid', weight: 2 },
-      { type: 'orchid', weight: 1, colors: { petal: '#b26bc7', petal2: '#e6c3ef', center: '#7a2a6a' } },
-      { type: 'rose', weight: 1.6, colors: whiteRose },
-      { type: 'calla', weight: 0.8 },
-    ],
-    accents: [{ type: 'ruscus', count: 5 }],
-    wrap: 'black', ribbon: '#ffffff',
   },
 ]
 
