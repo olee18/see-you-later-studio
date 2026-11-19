@@ -392,85 +392,20 @@ function RibbonBand({ dims, color, shape }: { dims: Dims; color: string; shape: 
 
 // ---------------------------------------------------------------- more shapes
 
-/** Lace pattern (white, transparent holes, scalloped outer edge) for the posy collar. */
-let laceTex: THREE.CanvasTexture | null = null
-function lace() {
-  if (laceTex) return laceTex
-  const c = document.createElement('canvas')
-  c.width = 256
-  c.height = 128
-  const ctx = c.getContext('2d')!
-  ctx.fillStyle = '#ffffff'
-  ctx.fillRect(0, 0, 256, 104)
-  // scalloped edge (v = 1 is the outer rim)
-  for (let x = 0; x <= 256; x += 32) {
-    ctx.beginPath()
-    ctx.arc(x + 16, 104, 16, 0, Math.PI)
-    ctx.fill()
-  }
-  ctx.globalCompositeOperation = 'destination-out'
-  for (let x = 0; x < 256; x += 32) {
-    ctx.beginPath(); ctx.arc(x + 16, 104, 5, 0, Math.PI * 2); ctx.fill()
-    ctx.beginPath(); ctx.arc(x + 16, 62, 9, 0, Math.PI * 2); ctx.fill()
-    ctx.beginPath(); ctx.arc(x, 76, 4, 0, Math.PI * 2); ctx.fill()
-    ctx.beginPath(); ctx.arc(x + 16, 30, 4, 0, Math.PI * 2); ctx.fill()
-  }
-  laceTex = new THREE.CanvasTexture(c)
-  laceTex.colorSpace = THREE.SRGBColorSpace
-  laceTex.wrapS = THREE.RepeatWrapping
-  laceTex.anisotropy = 8
-  return laceTex
-}
-
 const POSY_HANDLE_R = 0.03
 
-/** Round posy: lace collar under the dome + ribbon-wrapped handle down into the stand. */
+/** Round posy: paper tucked under the dome + ribbon-wrapped handle down into the stand. */
 function PosyWrap({ dims, tieY, bottom, wrapId, ribbon }: { dims: Dims; tieY: number; bottom: number; wrapId: string; ribbon: string }) {
   const wrap = wrapById(wrapId)
-  const collar = useMemo(() => {
-    const segU = 120
-    const segV = 6
-    const r0 = dims.rimR * 0.8
-    const r1 = dims.rimR * 1.3 + 0.03
-    const pos: number[] = []
-    const uv: number[] = []
-    const idx: number[] = []
-    for (let j = 0; j <= segV; j++) {
-      const t = j / segV
-      for (let i = 0; i <= segU; i++) {
-        const th = (i / segU) * Math.PI * 2
-        const r = r0 + (r1 - r0) * t
-        const y = dims.rimY - 0.01 - 0.085 * t + 0.012 * Math.sin(th * 16) * t
-        pos.push(r * Math.cos(th), y, r * Math.sin(th))
-        uv.push((i / segU) * 14, t)
-      }
-    }
-    for (let j = 0; j < segV; j++)
-      for (let i = 0; i < segU; i++) {
-        const a = j * (segU + 1) + i
-        const b = a + segU + 1
-        idx.push(a, b, a + 1, b, b + 1, a + 1)
-      }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3))
-    g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2))
-    g.setIndex(idx)
-    g.computeVertexNormals()
-    return g
-  }, [dims])
-  useEffect(() => () => collar.dispose(), [collar])
   const len = Math.max(0.02, tieY - bottom)
   return (
     <group>
-      <mesh geometry={collar} castShadow receiveShadow>
-        <meshStandardMaterial color={wrap.outer} map={lace()} alphaTest={0.5} roughness={0.8} side={THREE.DoubleSide} />
-      </mesh>
       {/* ribbon-wrapped handle */}
       <mesh position-y={bottom + len / 2} castShadow>
         <cylinderGeometry args={[POSY_HANDLE_R, POSY_HANDLE_R * 0.92, len, 32]} />
         <meshPhysicalMaterial color={ribbon} roughness={0.35} sheen={1} sheenColor="#ffffff" clearcoat={0.2} />
       </mesh>
-      {/* tissue under the collar so you don't see into the stems */}
+      {/* paper tucked under the flowers so you don't see into the stems */}
       <mesh position-y={dims.rimY - 0.03}>
         <cylinderGeometry args={[dims.rimR * 0.82, 0.04, Math.max(0.02, dims.rimY - 0.03 - tieY), 32, 1, true]} />
         <meshStandardMaterial color={wrap.inner} roughness={0.85} side={THREE.DoubleSide} />

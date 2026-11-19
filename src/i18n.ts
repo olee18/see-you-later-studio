@@ -104,7 +104,7 @@ const STR = {
   shape_korean: ['Korean wrap', 'ห่อสไตล์เกาหลี', 'ຫໍ່ແບບເກົາຫຼີ'],
   shape_cone: ['Tall cone', 'ทรงกรวยสูง', 'ຊົງກວຍສູງ'],
   shape_handtied: ['Hand-tied', 'ช่อมัดมือ', 'ຊໍ່ມັດມື'],
-  shape_posy: ['Round posy', 'ช่อกลมขอบลูกไม้', 'ຊໍ່ມົນຂອບລູກໄມ້'],
+  shape_posy: ['Round posy', 'ช่อกลม', 'ຊໍ່ມົນ'],
   // stands
   stand: ['Bouquet stand', 'ขาตั้งช่อ', 'ຂາຕັ້ງຊໍ່'],
   stand_gold: ['Gold stand', 'ขาตั้งสีทอง', 'ຂາຕັ້ງສີຄຳ'],

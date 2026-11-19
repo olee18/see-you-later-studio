@@ -43,7 +43,7 @@ export function ShapeIcon({ id, size = 56 }: { id: ShapeId; size?: number }) {
     case 'posy':
       return (
         <svg {...common}>
-          <path d="M8 26 Q12 34 18 30 Q22 36 28 32 Q34 36 38 30 Q44 34 48 26 Q40 36 28 37 Q16 36 8 26 Z" fill="#fff" stroke="#d9cfc4" strokeWidth="1" />
+          <path d="M16 26 L28 39 L40 26 Z" fill="#f3ece4" stroke="#d9cfc4" strokeWidth="1" />
           {blooms(28, 20, 6)}
           <rect x="25" y="36" width="6" height="16" rx="3" fill="#f2a7b8" />
           <circle cx="28" cy="37" r="2.6" fill="#e98fa3" />

@@ -44,7 +44,7 @@ const ANGLES: Record<PhotoAngle, { elev: number; az: number; dist: number }> = {
 function halfWidth(shape: ShapeId, d: Dims) {
   if (shape === 'handtied') return d.rimR * 1.06 + 0.06
   if (shape === 'cone') return d.rimR * 1.12 + 0.08 + 0.1 * d.S
-  if (shape === 'posy') return d.rimR * 1.3 + 0.06
+  if (shape === 'posy') return d.rimR * 1.06 + 0.06
   return d.rimR * 1.06 + 0.12 + 0.2 * d.S
 }
 
