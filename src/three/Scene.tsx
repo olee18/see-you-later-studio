@@ -20,8 +20,8 @@ const HERO_DIMS = dimsFor(HERO_DESIGN.items.length)
 /** Desktop: options panel on the right. Mobile: options sheet at the bottom. */
 function panelOffset(w: number, h: number, mode: 'hero' | 'arrange') {
   if (mode !== 'arrange') return { x: 0, y: 0 }
-  if (w >= 820) return { x: -Math.min(190, w * 0.15), y: 0 }
-  return { x: 0, y: Math.min(200, h * 0.22) }
+  if (w >= 820) return { x: -219, y: 0 }
+  return { x: 0, y: Math.min(220, h * 0.25) }
 }
 
 /** Frame the whole bouquet (paper peaks, flare and bow included). */
@@ -31,9 +31,9 @@ function shotFor(mode: 'hero' | 'arrange', w: number, h: number, dims: Dims) {
   const H = dims.topY + 0.26
   const W = 2 * (dims.rimR * 1.06 + 0.12 + 0.2 * dims.S)
   const t = Math.tan(((FOV / 2) * Math.PI) / 180)
-  const aspect = (mode === 'arrange' && !narrow ? w * 0.7 : w) / h
+  const aspect = (mode === 'arrange' && !narrow ? w - 456 : w) / h
   let d = Math.max(((H / 2) * 1.22) / t, ((W / 2) * 1.18) / (t * aspect))
-  if (mode === 'arrange' && narrow) d *= 1.3
+  if (mode === 'arrange' && narrow) d *= 1.4
   const elev = (mode === 'hero' ? 22 : 30) * (Math.PI / 180)
   const target = root.clone().add(new THREE.Vector3(0, H * 0.46, 0))
   if (mode === 'hero' && !narrow) target.x -= d * 0.2

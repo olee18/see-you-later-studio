@@ -87,7 +87,7 @@ export function BouquetSwitcher() {
                     setOpen(false)
                   }}
                 >
-                  <BouquetThumb design={b.design} size={34} />
+                  <BouquetThumb design={b.design} size={44} />
                   <span className="menu-item-name">{b.name}</span>
                   <span className="muted">{b.design.items.length} flowers</span>
                 </button>

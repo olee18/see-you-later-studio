@@ -1,7 +1,6 @@
 import type React from 'react'
 import { FLOWERS, FLOWER_TYPES, type FlowerType, type StemColors } from '../data/flowers'
 import { FLOWER_COLORS } from '../gift/palettes'
-import { MAX_ITEMS } from '../gift/layout'
 import { useDesign, useUI } from '../state/store'
 import { slotAtScreen } from '../three/stage'
 import { FlowerGlyph } from './FlowerGlyph'
@@ -72,7 +71,7 @@ function Row({ type }: { type: FlowerType }) {
   return (
     <div className="flower-row">
       <span className="lib-glyph">
-        <FlowerGlyph type={type} colors={options[0].colors} size={40} />
+        <FlowerGlyph type={type} colors={options[0].colors} size={46} />
       </span>
       <span className="flower-row-text">
         <span className="lib-name">{def.name}</span>
@@ -96,16 +95,16 @@ function Row({ type }: { type: FlowerType }) {
 }
 
 export function FlowerLibrary() {
-  const count = useDesign((s) => s.design.items.length)
   return (
     <div className="flower-lib">
-      <p className="muted small">
-        Build it one flower at a time: <b>tap a colour</b> to add that flower, or <b>drag it onto the bouquet</b> to place it exactly. Tap a flower in the bouquet to recolour or remove it — drag it to move it.
-      </p>
-      <div className="lib-count">
-        <span>{count} flowers</span>
-        <div className="meter" aria-hidden="true">
-          <div className="meter-fill" style={{ width: `${(count / MAX_ITEMS) * 100}%` }} />
+      <div className="howto">
+        <div>
+          <i>☝</i>
+          <span><b>Tap a colour</b> to add that flower</span>
+        </div>
+        <div>
+          <i>✥</i>
+          <span><b>Drag it</b> onto the bouquet to place it</span>
         </div>
       </div>
       <h3 className="lib-section">Flowers</h3>

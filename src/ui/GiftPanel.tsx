@@ -13,7 +13,8 @@ function Templates() {
   const [size, setSize] = useState<SizeId>('M')
   return (
     <>
-      <p className="muted small">Short on time? Start from a ready-made bouquet, then change any flower in <b>Arrange flowers</b>. (You can undo with ↶.)</p>
+      <p className="intro">Short on time? Pick a ready-made bouquet, then change any flower in <b>Arrange flowers</b>.</p>
+      <h3 className="step-title">Size</h3>
       <div className="size-row compact" role="radiogroup" aria-label="Template size">
         {SIZES.map((s) => (
           <button key={s.id} role="radio" aria-checked={s.id === size} className={`size-chip ${s.id === size ? 'is-on' : ''}`} onClick={() => setSize(s.id)}>
@@ -22,10 +23,11 @@ function Templates() {
           </button>
         ))}
       </div>
+      <h3 className="step-title">Bouquets</h3>
       <div className="style-grid" role="list">
         {STYLES.map((s) => (
           <button key={s.id} role="listitem" className={`style-card ${s.id === design.style ? 'is-on' : ''}`} onClick={() => applyTemplate(s.id, size)}>
-            <BouquetThumb styleId={s.id} />
+            <BouquetThumb styleId={s.id} size={96} />
             <span className="style-name">{s.name}</span>
             <span className="style-thai">{s.thai}</span>
           </button>
@@ -85,7 +87,7 @@ function SelectedFlower() {
     <div className="selected-bar" role="group" aria-label={`Selected ${def.name}`}>
       <div className="selected-head">
         <strong>{def.name}</strong>
-        <span className="muted">Drag it in the bouquet to move it</span>
+        <span className="muted">Change colour, remove, or drag it to move</span>
         <button className="icon-btn" onClick={() => useUI.getState().set({ selected: null })} aria-label="Deselect">
           ×
         </button>
@@ -103,8 +105,8 @@ function SelectedFlower() {
             />
           ))}
         </span>
-        <button className="btn danger sm" onClick={() => removeItem(selected)}>
-          Remove
+        <button className="btn danger" onClick={() => removeItem(selected)}>
+          Remove flower
         </button>
       </div>
     </div>
@@ -119,10 +121,13 @@ export function GiftPanel() {
   const style = styleById(design.style)
   return (
     <aside className="panel gift-panel" aria-label="Create your bouquet">
-      <header className="panel-head row">
+      <header className="panel-head">
         <div>
           <h2>{name ?? 'My Bouquet'}</h2>
-          <p className="muted">{style ? style.thai : 'จัดเอง · arranged by you'} · {design.items.length} flowers</p>
+          <div className="panel-sub">
+            <span className="count-badge">✿ {design.items.length} flowers</span>
+            <span>{style ? style.thai : 'จัดเอง'}</span>
+          </div>
         </div>
         <button className="btn ghost sm" onClick={() => useDesign.getState().surprise()} title="Pick a random bouquet">
           ✦ Surprise me
