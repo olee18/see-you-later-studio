@@ -12,6 +12,8 @@ export const stage = {
   gl: null as THREE.WebGLRenderer | null,
   scene: null as THREE.Scene | null,
   controls: null as OrbitControlsImpl | null,
+  /** one-shot: called with the WebGL canvas right after the next frame is drawn */
+  capture: null as ((canvas: HTMLCanvasElement) => void) | null,
 }
 
 const _v = new THREE.Vector3()

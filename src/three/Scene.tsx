@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { dimsFor, type Dims } from '../gift/layout'
 import { giftFromStyle } from '../gift/styles'
+import { photoFrame, usePhoto, type PhotoAngle } from '../state/photo'
 import { useDesign, useUI } from '../state/store'
 import { GiftBouquet } from './GiftBouquet'
 import { BENCH_ROOT, HERO_ROOT, stage } from './stage'
@@ -17,20 +18,44 @@ const FOV = 35
 const HERO_DESIGN = giftFromStyle('sweet-pink', 'L')
 const HERO_DIMS = dimsFor(HERO_DESIGN.items.length)
 
-/** Desktop: options panel on the right. Mobile: options sheet at the bottom. */
-function panelOffset(w: number, h: number, mode: 'hero' | 'arrange') {
+type Mode = 'hero' | 'arrange' | 'photo'
+
+/** Desktop: options panel on the right. Mobile: options sheet at the bottom. Photo: centre of the photo frame. */
+function panelOffset(w: number, h: number, mode: Mode) {
+  if (mode === 'photo') {
+    const f = photoFrame(w, h)
+    return { x: f.cx - w / 2, y: h / 2 - f.cy }
+  }
   if (mode !== 'arrange') return { x: 0, y: 0 }
   if (w >= 820) return { x: -219, y: 0 }
   return { x: 0, y: Math.min(220, h * 0.25) }
 }
 
 /** Frame the whole bouquet (paper peaks, flare and bow included). */
-function shotFor(mode: 'hero' | 'arrange', w: number, h: number, dims: Dims) {
+const ANGLES: Record<PhotoAngle, { elev: number; az: number; dist: number }> = {
+  three: { elev: 22, az: 32, dist: 1 },
+  front: { elev: 9, az: 0, dist: 1 },
+  top: { elev: 55, az: 0, dist: 1 },
+  close: { elev: 20, az: -18, dist: 0.6 },
+}
+
+function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle = 'three') {
   const narrow = w < h * 0.95
   const root = mode === 'hero' ? HERO_ROOT : BENCH_ROOT
   const H = dims.topY + 0.26
   const W = 2 * (dims.rimR * 1.06 + 0.12 + 0.2 * dims.S)
   const t = Math.tan(((FOV / 2) * Math.PI) / 180)
+  if (mode === 'photo') {
+    // fit the bouquet inside the 4:5 photo frame
+    const f = photoFrame(w, h)
+    const a = ANGLES[angle]
+    const d = Math.max(((H / 2) * 1.3 * h) / (t * f.h), ((W / 2) * 1.18 * h) / (t * f.w)) * a.dist
+    const elev = (a.elev * Math.PI) / 180
+    const az = (a.az * Math.PI) / 180
+    const target = root.clone().add(new THREE.Vector3(0, angle === 'close' ? dims.topY * 0.78 : H * (angle === 'top' ? 0.5 : 0.4), 0))
+    const pos = target.clone().add(new THREE.Vector3(Math.sin(az) * Math.cos(elev) * d, Math.sin(elev) * d, Math.cos(az) * Math.cos(elev) * d))
+    return { pos, target }
+  }
   const aspect = (mode === 'arrange' && !narrow ? w - 456 : w) / h
   let d = Math.max(((H / 2) * 1.22) / t, ((W / 2) * 1.18) / (t * aspect))
   if (mode === 'arrange' && narrow) d *= 1.4
@@ -47,11 +72,12 @@ function CameraRig() {
   const reduced = useUI((s) => s.reducedMotion)
   // re-frame only when the bouquet grows/shrinks noticeably (not on every flower)
   const bucket = useDesign((s) => Math.round(s.design.items.length / 6))
+  const angle = usePhoto((s) => s.angle)
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const size = useThree((s) => s.size)
   const controls = useRef<OrbitControlsImpl>(null!)
   const offset = useRef({ x: 0, y: 0 })
-  const last = useRef<{ mode: string; S: number } | null>(null)
+  const last = useRef<{ mode: string; S: number; angle: PhotoAngle } | null>(null)
   const dims = useMemo(() => (mode === 'hero' ? HERO_DIMS : dimsFor(Math.max(12, bucket * 6))), [mode, bucket])
 
   const applyOffset = () => {
@@ -69,12 +95,14 @@ function CameraRig() {
 
   useLayoutEffect(() => {
     const c = controls.current
-    const shot = shotFor(mode, size.width, size.height, dims)
+    const shot = shotFor(mode, size.width, size.height, dims, angle)
     const off = panelOffset(size.width, size.height, mode)
     const prev = last.current
-    last.current = { mode, S: dims.S }
+    last.current = { mode, S: dims.S, angle }
     const modeChanged = !prev || prev.mode !== mode
-    const sizeChanged = !!prev && Math.abs(prev.S - dims.S) > 1e-4
+    const sizeChanged = !!prev && (Math.abs(prev.S - dims.S) > 1e-4 || (mode === 'photo' && prev.angle !== angle))
+    // the long arcing move is only for travelling between the two stations
+    const travel = modeChanged && (prev?.mode === 'hero' || mode === 'hero')
 
     if (!prev || reduced || (!modeChanged && !sizeChanged)) {
       // first frame, reduced motion, or a resize: jump straight to the framing
@@ -83,22 +111,22 @@ function CameraRig() {
       offset.current = off
       applyOffset()
       c.update()
-      c.enabled = mode === 'arrange'
+      c.enabled = mode !== 'hero'
       return
     }
     c.enabled = false
-    useUI.getState().set({ cameraBusy: modeChanged })
+    useUI.getState().set({ cameraBusy: travel })
     const tl = gsap.timeline({
       onUpdate: () => {
         applyOffset()
         c.update()
       },
       onComplete: () => {
-        c.enabled = useUI.getState().mode === 'arrange'
+        c.enabled = useUI.getState().mode !== 'hero'
         useUI.getState().set({ cameraBusy: false })
       },
     })
-    if (modeChanged) {
+    if (travel) {
       const mid = camera.position.clone().lerp(shot.pos, 0.5)
       mid.y += 0.35
       mid.z += 0.6
@@ -107,16 +135,18 @@ function CameraRig() {
         .to(c.target, { x: shot.target.x, y: shot.target.y, z: shot.target.z, duration: 2.1, ease: 'power3.inOut' }, 0)
         .to(offset.current, { x: off.x, y: off.y, duration: 2.1, ease: 'power3.inOut' }, 0)
     } else {
-      // bouquet size changed: glide to the new framing
-      tl.to(camera.position, { x: shot.pos.x, y: shot.pos.y, z: shot.pos.z, duration: 0.9, ease: 'power2.inOut' }, 0)
-        .to(c.target, { x: shot.target.x, y: shot.target.y, z: shot.target.z, duration: 0.9, ease: 'power2.inOut' }, 0)
+      // bouquet size, photo angle or arrange <-> photo: glide to the new framing
+      const dur = modeChanged ? 1.1 : 0.9
+      tl.to(camera.position, { x: shot.pos.x, y: shot.pos.y, z: shot.pos.z, duration: dur, ease: 'power2.inOut' }, 0)
+        .to(c.target, { x: shot.target.x, y: shot.target.y, z: shot.target.z, duration: dur, ease: 'power2.inOut' }, 0)
+        .to(offset.current, { x: off.x, y: off.y, duration: dur, ease: 'power2.inOut' }, 0)
     }
     return () => {
       tl.kill()
       useUI.getState().set({ cameraBusy: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, dims, size.width, size.height])
+  }, [mode, dims, size.width, size.height, angle])
 
   return (
     <OrbitControls
@@ -144,6 +174,17 @@ function StageBridge() {
     stage.gl = gl
     stage.scene = scene
   }, [camera, gl, scene])
+  return null
+}
+
+/** Hands the finished frame (after post-processing) to a pending photo capture. */
+function Capturer() {
+  useFrame(({ gl }) => {
+    const job = stage.capture
+    if (!job) return
+    stage.capture = null
+    job(gl.domElement)
+  }, 2)
   return null
 }
 
@@ -234,6 +275,7 @@ export function Scene() {
       <BenchStation />
       <CameraRig />
       <StageBridge />
+      <Capturer />
       <Effects />
     </Canvas>
   )

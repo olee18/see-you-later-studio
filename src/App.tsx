@@ -5,6 +5,8 @@ import { Scene } from './three/Scene'
 import { BouquetSwitcher } from './ui/BouquetSwitcher'
 import { DragGhost } from './ui/FlowerLibrary'
 import { GiftPanel } from './ui/GiftPanel'
+import { PhotoMode } from './ui/PhotoMode'
+import { usePhoto } from './state/photo'
 
 function useReducedMotionSync() {
   useEffect(() => {
@@ -22,6 +24,12 @@ function useKeyboard() {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const ui = useUI.getState()
+      if (ui.mode === 'photo' && e.key === 'Escape') {
+        const ph = usePhoto.getState()
+        if (ph.result) ph.set({ result: null })
+        else ui.set({ mode: 'arrange' })
+        return
+      }
       if (ui.mode !== 'arrange') return
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
         e.preventDefault()
@@ -162,6 +170,9 @@ function Toolbar() {
       </button>
       <BouquetSwitcher />
       <UndoRedo />
+      <button className="btn primary photo-btn" onClick={() => useUI.getState().set({ mode: 'photo', selected: null })} aria-label={t('photoMode')}>
+        📷<span className="desk-only"> {t('photo')}</span>
+      </button>
       <LangSwitch />
       <LangCycle />
     </div>
@@ -198,6 +209,7 @@ export default function App() {
         <Toolbar />
         <EmptyHint />
       </div>
+      <PhotoMode />
       <DragGhost />
       <Toast />
     </div>

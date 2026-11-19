@@ -248,7 +248,7 @@ export interface LibDrag {
 }
 
 interface UIState {
-  mode: 'hero' | 'arrange'
+  mode: 'hero' | 'arrange' | 'photo'
   cameraBusy: boolean
   toast: { msg: string; key: number } | null
   reducedMotion: boolean
