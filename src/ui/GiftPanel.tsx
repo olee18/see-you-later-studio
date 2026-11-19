@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { FLOWER_COLORS } from '../gift/palettes'
-import { RIBBONS, SIZES, STYLES, WRAPS, type SizeId } from '../gift/styles'
+import { OCCASIONS, RIBBONS, SIZES, STYLES, WRAPS, type Occasion, type SizeId } from '../gift/styles'
 import { bouquetLabel, useT } from '../i18n'
 import { useDesign, useUI } from '../state/store'
 import { BouquetThumb } from './BouquetThumb'
@@ -16,7 +16,9 @@ function Templates() {
   const design = useDesign((s) => s.design)
   const { applyTemplate, startEmpty } = useDesign.getState()
   const [size, setSize] = useState<SizeId>('M')
+  const [occ, setOcc] = useState<Occasion | 'all'>('all')
   const { t, style } = useT()
+  const shown = occ === 'all' ? STYLES : STYLES.filter((s) => s.occasion === occ)
   return (
     <>
       <p className="intro">{t('tplIntro')} <b>{t('tabFlowers')}</b>.</p>
@@ -29,9 +31,16 @@ function Templates() {
           </button>
         ))}
       </div>
-      <h3 className="step-title">{t('bouquets')}</h3>
+      <h3 className="step-title">{t('bouquets')} <span className="count-pill">{STYLES.length}</span></h3>
+      <div className="occ-row" role="radiogroup" aria-label={t('bouquets')}>
+        {(['all', ...OCCASIONS] as const).map((o) => (
+          <button key={o} role="radio" aria-checked={o === occ} className={`chip ${o === occ ? 'is-on' : ''}`} onClick={() => setOcc(o)}>
+            {t(`occ_${o}` as StrKey)}
+          </button>
+        ))}
+      </div>
       <div className="style-grid" role="list">
-        {STYLES.map((s) => (
+        {shown.map((s) => (
           <button key={s.id} role="listitem" className={`style-card ${s.id === design.style ? 'is-on' : ''}`} onClick={() => applyTemplate(s.id, size)}>
             <BouquetThumb styleId={s.id} size={96} />
             <span className="style-name">{style(s.id)}</span>

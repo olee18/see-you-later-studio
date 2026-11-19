@@ -108,6 +108,12 @@ const STR = {
     'ກ່ອງດອກໄມ້ວາງເທິງໂຕະໄດ້ເລີຍ ບໍ່ຕ້ອງໃຊ້ຂາຕັ້ງ',
   ],
   boxColour: ['Box colour', 'สีกล่อง', 'ສີກ່ອງ'],
+  // occasions (ready-made filter)
+  occ_all: ['All', 'ทั้งหมด', 'ທັງໝົດ'],
+  occ_love: ['Love', 'ความรัก', 'ຄວາມຮັກ'],
+  occ_celebrate: ['Celebrate', 'แสดงความยินดี', 'ສະແດງຄວາມຍິນດີ'],
+  occ_family: ['Family', 'ครอบครัว', 'ຄອບຄົວ'],
+  occ_elegant: ['Elegant', 'หรูหรา', 'ຫຼູຫຼາ'],
   // stands
   stand: ['Bouquet stand', 'ขาตั้งช่อ', 'ຂາຕັ້ງຊໍ່'],
   stand_gold: ['Gold stand', 'ขาตั้งสีทอง', 'ຂາຕັ້ງສີຄຳ'],
@@ -216,6 +222,15 @@ const STYLE_NAMES: Record<string, Tr> = {
   'pure-white': ['Pure White', 'ขาวบริสุทธิ์', 'ຂາວບໍລິສຸດ'],
   sunshine: ['Sunshine', 'สดใสซันไชน์', 'ແສງແດດສົດໃສ'],
   'pink-cloud': ['Pink Cloud', 'เมฆชมพู', 'ເມກສີບົວ'],
+  proposal: ['Will You Marry Me', 'ขอแต่งงาน', 'ຂໍແຕ່ງງານ'],
+  'sunflower-joy': ['Sunflower Joy', 'ทานตะวันสดใส', 'ທານຕະເວັນສົດໃສ'],
+  graduation: ['Graduation Day', 'รับปริญญา', 'ຮັບປະລິນຍາ'],
+  'tulip-rainbow': ['Tulip Rainbow', 'ทิวลิปหลากสี', 'ທິວລິບຫຼາກສີ'],
+  'mother-day': ['For Mum', 'สำหรับแม่', 'ສຳລັບແມ່'],
+  'peach-sunset': ['Peach Sunset', 'พีชยามเย็น', 'ພີຊຍາມແລງ'],
+  'white-green': ['White & Green', 'ขาวเขียวมินิมอล', 'ຂາວຂຽວມິນິມອນ'],
+  'lavender-dream': ['Lavender Dream', 'ลาเวนเดอร์ดรีม', 'ລາເວນເດີດຣີມ'],
+  'orchid-elegance': ['Orchid Elegance', 'กล้วยไม้หรู', 'ດອກເອື້ອງຫຼູຫຼາ'],
 }
 
 const KEY = 'bloom-studio:lang'
