@@ -174,7 +174,6 @@ const FLOWER_NAMES: Record<FlowerType, Tr> = {
   chrysanthemum: ['Chrysanthemum', 'เบญจมาศ', 'ເບັນຈະມາດ'],
   ranunculus: ['Ranunculus', 'รานันคูลัส', 'ຣານັນຄູລັສ'],
   lisianthus: ['Lisianthus', 'ลิเซียนทัส', 'ລີຊຽນທັສ'],
-  calla: ['Calla Lily', 'คาล่าลิลลี่', 'ຄາລ່າລີລີ່'],
   lavender: ['Lavender', 'ลาเวนเดอร์', 'ລາເວນເດີ'],
   jasmine: ['Jasmine', 'มะลิ', 'ມະລິ'],
 }

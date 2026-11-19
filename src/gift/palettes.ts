@@ -72,7 +72,6 @@ export const FLOWER_COLORS: Record<FlowerType, ColorOption[]> = {
     opt('lisianthus', 'White', { petal: '#ffffff', petal2: '#f3f0ea', gradient: 0.3 }),
     opt('lisianthus', 'Pink', { petal: '#fbe3ea', petal2: '#f29aae', gradient: 0.7 }),
   ],
-  calla: [opt('calla', 'White'), opt('calla', 'Pink', { petal: '#f2a7c3', petal2: '#fde3ee' })],
   babysBreath: [
     opt('babysBreath', 'White'),
     opt('babysBreath', 'Pink', { petal: '#f5b3c8', petal2: '#ffe3ec' }),

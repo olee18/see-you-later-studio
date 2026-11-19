@@ -49,7 +49,7 @@ export const GIFT_HEAD_SCALE = 1.55
 /** how big each flower looks relative to a rose (so mixed bouquets stay balanced) */
 const TYPE_SCALE: Partial<Record<FlowerType, number>> = {
   peony: 0.85, hydrangea: 0.82, sunflower: 0.78, lily: 0.78, orchid: 0.85, gerbera: 0.9, babysBreath: 1.12,
-  eucalyptus: 1.0, fern: 0.95, ruscus: 1.0, lavender: 1.05, jasmine: 1.05, calla: 0.95, tulip: 1.05, carnation: 1.1, daisy: 1.05,
+  eucalyptus: 1.0, fern: 0.95, ruscus: 1.0, lavender: 1.05, jasmine: 1.05, tulip: 1.05, carnation: 1.1, daisy: 1.05,
 }
 
 /** rose heads read a little more cupped, like florist roses */
