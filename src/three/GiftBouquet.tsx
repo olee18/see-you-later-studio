@@ -106,20 +106,6 @@ function FlowerBatch({ heads }: { heads: Head[] }) {
   )
 }
 
-/** Flowers needed before the leafy cap shows (with fewer it reads as a flat green disc). */
-const FOLIAGE_MIN = 6
-
-/** Dark leafy cap just under the flower heads, so no gaps show through to the stems. */
-function FoliageBase({ dims, count }: { dims: Dims; count: number }) {
-  if (count < FOLIAGE_MIN || dims.cap < 0.05) return null
-  return (
-    <mesh position-y={dims.cy} receiveShadow>
-      <sphereGeometry args={[dims.R * 0.93, 40, 16, 0, Math.PI * 2, 0, dims.cap * 0.98]} />
-      <meshStandardMaterial color="#3f5a34" roughness={0.9} side={THREE.FrontSide} />
-    </mesh>
-  )
-}
-
 /**
  * Stems from the binding point up to each head. `lower` (hand-tied / posy) adds
  * the part below the tie: the stems cross at the tie and spread a little going
@@ -600,7 +586,6 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
       <group ref={flowers} position-y={dims.bindY}>
         <group position-y={-dims.bindY}>
           <StemBatch heads={heads} bindY={tied.bindY} lower={shape === 'handtied' ? { bottom: stemBottom, maxR: standSeatR(design.stand) } : shape === 'posy' ? { bottom: stemBottom, maxR: POSY_HANDLE_R * 0.7 } : undefined} />
-          <FoliageBase dims={dims} count={heads.length} />
           <FlowerBatch heads={batched} />
           {popHead && pop && <PopFlower head={popHead} popKey={pop.key} />}
           {interactive && <PickProxy heads={heads} />}
