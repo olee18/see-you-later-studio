@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { LANGS, bouquetLabel, useLang, useT } from './i18n'
 import { useDesign, useUI } from './state/store'
 import { Scene } from './three/Scene'
 import { BouquetSwitcher } from './ui/BouquetSwitcher'
@@ -41,27 +42,67 @@ function useKeyboard() {
 
 /** If they already have a bouquet in progress, let them jump back in. */
 function ContinueLink() {
-  const name = useDesign((s) => s.bouquets.find((b) => b.id === s.currentId)?.name)
+  const current = useDesign((s) => s.bouquets.find((b) => b.id === s.currentId))
   const n = useDesign((s) => s.design.items.length)
-  if (!n) return null
+  const { t, lang } = useT()
+  if (!n || !current) return null
   return (
     <button className="link-btn" onClick={() => useUI.getState().set({ mode: 'arrange', tab: 'flowers' })}>
-      Continue “{name}” ({n} flowers) →
+      {t('continue', { name: bouquetLabel(current, lang), n })}
+    </button>
+  )
+}
+
+/** ລາວ · ไทย · EN */
+function LangSwitch({ tabbable = true }: { tabbable?: boolean }) {
+  const lang = useLang((s) => s.lang)
+  const { t } = useT()
+  return (
+    <div className="lang-switch" role="radiogroup" aria-label={t('language')}>
+      {LANGS.map((l) => (
+        <button
+          key={l.id}
+          role="radio"
+          aria-checked={l.id === lang}
+          className={l.id === lang ? 'is-on' : ''}
+          onClick={() => useLang.getState().setLang(l.id)}
+          title={l.name}
+          lang={l.id}
+          tabIndex={tabbable ? 0 : -1}
+        >
+          {l.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Phone toolbar: one button that steps ລາວ → ไทย → EN. */
+function LangCycle() {
+  const lang = useLang((s) => s.lang)
+  const { t } = useT()
+  const i = LANGS.findIndex((l) => l.id === lang)
+  const next = LANGS[(i + 1) % LANGS.length]
+  return (
+    <button className="btn ghost lang-cycle" onClick={() => useLang.getState().setLang(next.id)} aria-label={`${t('language')}: ${LANGS[i].name} → ${next.name}`}>
+      {LANGS[i].label}
     </button>
   )
 }
 
 function Hero() {
   const mode = useUI((s) => s.mode)
+  const { t } = useT()
   return (
     <section className={`hero ${mode === 'hero' ? 'is-on' : ''}`} aria-hidden={mode !== 'hero'}>
-      <p className="eyebrow">Bouquets for someone special</p>
+      <LangSwitch tabbable={mode === 'hero'} />
+      <p className="eyebrow">{t('eyebrow')}</p>
       <h1>
         Bloom
         <br />
         Studio
       </h1>
-      <p className="lede">Arrange your own bouquet one flower at a time — every flower, every colour, your choice. Then wrap it, tie the bow, and surprise the one you love.</p>
+      <p className="lede">{t('lede')}</p>
       <div className="hero-actions">
         <button
           className="btn primary big"
@@ -71,10 +112,10 @@ function Hero() {
           }}
           tabIndex={mode === 'hero' ? 0 : -1}
         >
-          Arrange my own bouquet
+          {t('arrangeOwn')}
         </button>
         <button className="btn ghost big" onClick={() => useUI.getState().set({ mode: 'arrange', tab: 'templates' })} tabIndex={mode === 'hero' ? 0 : -1}>
-          Start from a ready-made one
+          {t('startReady')}
         </button>
       </div>
       <ContinueLink />
@@ -85,12 +126,13 @@ function Hero() {
 function UndoRedo() {
   const canUndo = useDesign((s) => s.past.length > 0)
   const canRedo = useDesign((s) => s.future.length > 0)
+  const { t } = useT()
   return (
     <>
-      <button className="btn ghost icon" disabled={!canUndo} onClick={() => useDesign.getState().undo()} aria-label="Undo" title="Undo (Ctrl/⌘ Z)">
+      <button className="btn ghost icon" disabled={!canUndo} onClick={() => useDesign.getState().undo()} aria-label={t('undo')} title={`${t('undo')} (Ctrl/⌘ Z)`}>
         ↶
       </button>
-      <button className="btn ghost icon" disabled={!canRedo} onClick={() => useDesign.getState().redo()} aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)">
+      <button className="btn ghost icon" disabled={!canRedo} onClick={() => useDesign.getState().redo()} aria-label={t('redo')} title={`${t('redo')} (Ctrl/⌘ Shift Z)`}>
         ↷
       </button>
     </>
@@ -101,23 +143,27 @@ function EmptyHint() {
   const n = useDesign((s) => s.design.items.length)
   const mode = useUI((s) => s.mode)
   const busy = useUI((s) => s.cameraBusy)
+  const { t } = useT()
   if (n > 0 || mode !== 'arrange' || busy) return null
   return (
     <div className="empty-hint">
-      <strong>Your bouquet starts here</strong>
-      <span>Tap a colour in the flower list to add your first flower — or drag it right onto the bouquet.</span>
+      <strong>{t('emptyTitle')}</strong>
+      <span>{t('emptyBody')}</span>
     </div>
   )
 }
 
 function Toolbar() {
+  const { t } = useT()
   return (
-    <div className="toolbar" role="toolbar" aria-label="Bouquet tools">
-      <button className="btn ghost" onClick={() => useUI.getState().set({ mode: 'hero' })} aria-label="Back to the studio">
-        ←<span className="desk-only"> Studio</span>
+    <div className="toolbar" role="toolbar" aria-label={t('tools')}>
+      <button className="btn ghost" onClick={() => useUI.getState().set({ mode: 'hero' })} aria-label={t('backAria')}>
+        ←<span className="desk-only"> {t('studio')}</span>
       </button>
       <BouquetSwitcher />
       <UndoRedo />
+      <LangSwitch />
+      <LangCycle />
     </div>
   )
 }

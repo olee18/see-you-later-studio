@@ -1,6 +1,7 @@
 import type React from 'react'
 import { FLOWERS, FLOWER_TYPES, type FlowerType, type StemColors } from '../data/flowers'
 import { FLOWER_COLORS } from '../gift/palettes'
+import { useT } from '../i18n'
 import { useDesign, useUI } from '../state/store'
 import { slotAtScreen } from '../three/stage'
 import { FlowerGlyph } from './FlowerGlyph'
@@ -66,15 +67,16 @@ function add(type: FlowerType, colors: StemColors, slot: number | null) {
 }
 
 function Row({ type }: { type: FlowerType }) {
-  const def = FLOWERS[type]
   const options = FLOWER_COLORS[type]
+  const { t, flower, color } = useT()
+  const fname = flower(type)
   return (
     <div className="flower-row">
       <span className="lib-glyph">
         <FlowerGlyph type={type} colors={options[0].colors} size={46} />
       </span>
       <span className="flower-row-text">
-        <span className="lib-name">{def.name}</span>
+        <span className="lib-name">{fname}</span>
         <span className="flower-dots">
           {options.map((o) => (
             <button
@@ -84,8 +86,8 @@ function Row({ type }: { type: FlowerType }) {
               onPointerDown={(e) => startDrag(e, type, o.colors)}
               onClick={(e) => e.detail === 0 && add(type, o.colors, null)}
               onDragStart={(e) => e.preventDefault()}
-              aria-label={`Add ${o.name.toLowerCase()} ${def.name.toLowerCase()}`}
-              title={`${o.name} ${def.name.toLowerCase()} — tap to add, or drag onto the bouquet`}
+              aria-label={t('addAria', { color: color(o.name), flower: fname })}
+              title={t('dotTitle', { color: color(o.name), flower: fname })}
             />
           ))}
         </span>
@@ -95,23 +97,24 @@ function Row({ type }: { type: FlowerType }) {
 }
 
 export function FlowerLibrary() {
+  const { t } = useT()
   return (
     <div className="flower-lib">
       <div className="howto">
         <div>
           <i>☝</i>
-          <span><b>Tap a colour</b> to add that flower</span>
+          <span><b>{t('howTap')}</b> {t('howTapRest')}</span>
         </div>
         <div>
           <i>✥</i>
-          <span><b>Drag it</b> onto the bouquet to place it</span>
+          <span><b>{t('howDrag')}</b> {t('howDragRest')}</span>
         </div>
       </div>
-      <h3 className="lib-section">Flowers</h3>
+      <h3 className="lib-section">{t('secFlowers')}</h3>
       {flowers.map((t) => (
         <Row key={t} type={t} />
       ))}
-      <h3 className="lib-section">Fillers &amp; greens</h3>
+      <h3 className="lib-section">{t('secFillers')}</h3>
       {fillers.map((t) => (
         <Row key={t} type={t} />
       ))}
@@ -123,11 +126,12 @@ export function FlowerLibrary() {
 export function DragGhost() {
   const d = useUI((s) => s.libDrag)
   const slot = useUI((s) => s.dropSlot)
+  const { t } = useT()
   if (!d) return null
   return (
     <div className="drag-ghost" style={{ transform: `translate(${d.x}px, ${d.y}px)` }}>
       <FlowerGlyph type={d.type} colors={d.colors} size={52} />
-      <span>{!d.overCanvas ? 'Drop on the bouquet' : slot != null ? 'Release to place here' : 'Release to add'}</span>
+      <span>{t(!d.overCanvas ? 'ghostOff' : slot != null ? 'ghostSlot' : 'ghostAdd')}</span>
     </div>
   )
 }

@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
 import type { FlowerType, StemColors } from '../data/flowers'
 import { MAX_ITEMS } from '../gift/layout'
+import { bouquetLabel, t, useLang } from '../i18n'
 import {
   STYLES, emptyGift, giftFromStyle, makeItem, randomGift, sanitizeGift, styleById,
   type GiftDesign, type SizeId,
@@ -76,7 +77,7 @@ function fresh(design = emptyGift(), list: SavedBouquet[] = []): SavedBouquet {
 }
 
 const initial = fresh()
-const full = () => useUI.getState().notify(`You can keep up to ${MAX_BOUQUETS} bouquets — delete one first.`)
+const full = () => useUI.getState().notify(t('tooManyBouquets', { n: MAX_BOUQUETS }))
 
 export const useDesign = create<DesignState>()(
   persist(
@@ -144,7 +145,7 @@ export const useDesign = create<DesignState>()(
         addItem: (type, colors, slot) => {
           const d = get().design
           if (d.items.length >= MAX_ITEMS) {
-            useUI.getState().notify(`The bouquet is full — ${MAX_ITEMS} flowers max.`)
+            useUI.getState().notify(t('bouquetFull', { n: MAX_ITEMS }))
             return false
           }
           const it = makeItem(type, colors)
@@ -202,7 +203,7 @@ export const useDesign = create<DesignState>()(
           const src = st.bouquets.find((b) => b.id === id)
           if (!src) return
           if (st.bouquets.length >= MAX_BOUQUETS) return full()
-          const b: SavedBouquet = { id: uid(), name: uniqueName(st.bouquets, `${src.name} copy`), updatedAt: Date.now(), design: { ...src.design } }
+          const b: SavedBouquet = { id: uid(), name: uniqueName(st.bouquets, `${bouquetLabel(src, useLang.getState().lang)} ${t('copy')}`.slice(0, 40)), updatedAt: Date.now(), design: { ...src.design } }
           open(b, [b, ...st.bouquets])
         },
         deleteBouquet: (id) => {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { MAX_BOUQUETS, useDesign } from '../state/store'
+import { bouquetLabel, useT } from '../i18n'
 import { BouquetThumb } from './BouquetThumb'
 
 /** "My bouquets" menu: switch, create, rename, duplicate, delete. */
@@ -12,6 +13,8 @@ export function BouquetSwitcher() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const root = useRef<HTMLDivElement>(null)
   const api = useDesign.getState()
+  const { t, lang } = useT()
+  const label = current ? bouquetLabel(current, lang) : t('myBouquet')
 
   useEffect(() => {
     if (!open) return
@@ -37,7 +40,7 @@ export function BouquetSwitcher() {
   return (
     <div className="switcher" ref={root}>
       <button className="btn ghost switcher-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open}>
-        <span className="switcher-name">{current?.name ?? 'My Bouquet'}</span>
+        <span className="switcher-name">{label}</span>
         <span aria-hidden="true">▾</span>
       </button>
       {open && current && (
@@ -48,21 +51,21 @@ export function BouquetSwitcher() {
                 onSubmit={(e) => {
                   e.preventDefault()
                   const v = new FormData(e.currentTarget).get('name')
-                  api.renameBouquet(current.id, String(v ?? ''))
+                  if (String(v ?? '').trim() !== label) api.renameBouquet(current.id, String(v ?? ''))
                   setRenaming(false)
                 }}
               >
-                <input name="name" className="text-input" defaultValue={current.name} maxLength={40} autoFocus onBlur={(e) => { api.renameBouquet(current.id, e.target.value); setRenaming(false) }} />
+                <input name="name" className="text-input" defaultValue={label} maxLength={40} autoFocus onBlur={(e) => { if (e.target.value.trim() !== label) api.renameBouquet(current.id, e.target.value); setRenaming(false) }} />
               </form>
             ) : (
-              <button className="menu-title" onClick={() => setRenaming(true)} title="Rename">
-                {current.name} <span className="muted">✎ rename</span>
+              <button className="menu-title" onClick={() => setRenaming(true)} title={t('rename')}>
+                {label} <span className="muted">✎ {t('rename')}</span>
               </button>
             )}
           </div>
           <div className="menu-actions">
-            <button className="btn ghost sm" onClick={() => { api.newBouquet(); setOpen(false) }}>+ New</button>
-            <button className="btn ghost sm" onClick={() => { api.duplicateBouquet(current.id); setOpen(false) }}>Duplicate</button>
+            <button className="btn ghost sm" onClick={() => { api.newBouquet(); setOpen(false) }}>{t('newBouquet')}</button>
+            <button className="btn ghost sm" onClick={() => { api.duplicateBouquet(current.id); setOpen(false) }}>{t('duplicate')}</button>
             <button
               className={`btn ghost sm ${confirmDelete === current.id ? 'danger' : ''}`}
               onClick={() => {
@@ -71,11 +74,11 @@ export function BouquetSwitcher() {
                 setConfirmDelete(null)
               }}
             >
-              {confirmDelete === current.id ? 'Tap again to delete' : 'Delete'}
+              {confirmDelete === current.id ? t('delConfirm') : t('del')}
             </button>
           </div>
           <div className="menu-label muted">
-            My bouquets · {bouquets.length}/{MAX_BOUQUETS}
+            {t('myBouquets')} · {bouquets.length}/{MAX_BOUQUETS}
           </div>
           <ul className="menu-list">
             {bouquets.map((b) => (
@@ -88,8 +91,8 @@ export function BouquetSwitcher() {
                   }}
                 >
                   <BouquetThumb design={b.design} size={44} />
-                  <span className="menu-item-name">{b.name}</span>
-                  <span className="muted">{b.design.items.length} flowers</span>
+                  <span className="menu-item-name">{bouquetLabel(b, lang)}</span>
+                  <span className="muted">{t('nFlowers', { n: b.design.items.length })}</span>
                 </button>
               </li>
             ))}
