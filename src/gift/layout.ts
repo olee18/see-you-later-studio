@@ -1,11 +1,17 @@
 import * as THREE from 'three'
 import { FLOWERS, mulberry32, type FlowerType, type StemColors } from '../data/flowers'
-import { SIZES, styleById, type GiftDesign, type MixEntry } from './styles'
 
 /**
- * Florist-style layout: flower heads packed on a spherical cap ("dome"), all
- * facing outward, the way Thai/Korean florists build a round hand-tied bouquet.
+ * Florist-style dome with STABLE slots: slot k always sits at the same spot on
+ * the dome (golden-angle spiral from the centre outward). Adding a flower fills
+ * the next rim slot, so the bouquet grows outward and nothing else moves.
  */
+
+export interface Item {
+  type: FlowerType
+  colors: StemColors
+  seed: number
+}
 
 export interface Head {
   type: FlowerType
@@ -19,103 +25,84 @@ export interface Head {
 }
 
 export interface Dims {
-  /** dome sphere radius */
+  /** "visual size" used to scale paper flare and bow */
   S: number
-  /** rim (edge of the dome) */
   rimY: number
   rimR: number
-  /** top of the dome */
   topY: number
-  /** where stems are bound / ribbon sits */
   bindY: number
+  /** dome sphere centre height, radius and cap half-angle */
+  cy: number
+  R: number
+  cap: number
 }
 
+export const MAX_ITEMS = 80
 export const BIND_Y = 0.2
-const RIM_Y = 0.5
-const CAP = 56 * (Math.PI / 180)
+const R = 0.34 // dome sphere radius
+const HEAD_R = 0.052
+const AREA = Math.PI * HEAD_R * HEAD_R * 0.86
 const GOLDEN = Math.PI * (3 - Math.sqrt(5))
 const UP = new THREE.Vector3(0, 1, 0)
-/** heads are modelled at true size; scaled up to read like a florist bouquet */
-export const GIFT_HEAD_SCALE = 1.7
+export const GIFT_HEAD_SCALE = 1.55
 
-export function dimsFor(design: Pick<GiftDesign, 'style' | 'size'>): Dims {
-  const style = styleById(design.style)
-  const n = Math.round((SIZES.find((s) => s.id === design.size)?.heads ?? 20) * (style.density ?? 1))
-  const a = Math.PI * style.headR * style.headR * 0.86
-  const S = Math.sqrt((n * a) / (2 * Math.PI * (1 - Math.cos(CAP))))
-  const rimR = S * Math.sin(CAP)
-  const topY = RIM_Y + S * (1 - Math.cos(CAP))
-  return { S, rimY: RIM_Y, rimR, topY, bindY: BIND_Y }
+/** how big each flower looks relative to a rose (so mixed bouquets stay balanced) */
+const TYPE_SCALE: Partial<Record<FlowerType, number>> = {
+  peony: 0.85, hydrangea: 0.82, sunflower: 0.78, lily: 0.78, orchid: 0.85, gerbera: 0.9, babysBreath: 1.12,
+  eucalyptus: 1.0, fern: 0.95, ruscus: 1.0, lavender: 1.05, jasmine: 1.05, calla: 0.95, tulip: 1.05, carnation: 1.1, daisy: 1.05,
 }
 
-/** Heart test in the top view; the point of the heart faces the viewer (+z). */
-function inHeart(x: number, z: number) {
-  const X = x * 1.15
-  const Y = -z * 1.12 + 0.24
-  const q = X * X + Y * Y - 1
-  return q * q * q - X * X * Y * Y * Y <= 0
+/** rose heads read a little more cupped, like florist roses */
+const TYPE_OPEN: Partial<Record<FlowerType, number>> = { rose: 0.72, peony: 0.82, ranunculus: 0.85, tulip: 0.8 }
+
+const capAngle = (n: number) => Math.acos(Math.max(-0.2, 1 - (Math.max(n, 6) * AREA) / (2 * Math.PI * R * R)))
+
+/** dome centre rises a little as the bouquet grows, so big bouquets stand taller */
+const centerY = (n: number) => 0.27 + 0.16 * (1 - Math.cos(capAngle(n)))
+
+export function slotDir(k: number) {
+  const z = Math.max(-0.2, 1 - ((k + 0.5) * AREA) / (2 * Math.PI * R * R))
+  const s = Math.sqrt(1 - z * z)
+  const th = k * GOLDEN
+  return new THREE.Vector3(s * Math.cos(th), z, s * Math.sin(th))
 }
 
-function pickWeighted(mix: MixEntry[], rnd: () => number) {
-  const total = mix.reduce((s, m) => s + m.weight, 0)
-  let r = rnd() * total
-  for (const m of mix) if ((r -= m.weight) <= 0) return m
-  return mix[mix.length - 1]
+/** Slot position in bouquet-local space for a bouquet of n flowers. */
+export function slotPos(k: number, n: number) {
+  return slotDir(k).multiplyScalar(R).add(new THREE.Vector3(0, centerY(n), 0))
 }
 
-function headFrom(entry: MixEntry, pos: THREE.Vector3, dir: THREE.Vector3, rnd: () => number, base = 1): Head {
-  return {
-    type: entry.type,
-    colors: { ...FLOWERS[entry.type].colors, ...entry.colors },
-    open: entry.open ?? 1,
-    pos,
-    dir,
-    spin: rnd() * Math.PI * 2,
-    scale: GIFT_HEAD_SCALE * base * (entry.scale ?? 1) * (0.94 + rnd() * 0.12),
-    variant: Math.floor(rnd() * 5),
-  }
+export function dimsFor(n: number): Dims {
+  const a = capAngle(n)
+  const cy = centerY(n)
+  const rimR = R * Math.sin(a)
+  return { S: rimR / 0.83, rimY: cy + R * Math.cos(a), rimR, topY: cy + R, bindY: BIND_Y, cy, R, cap: a }
 }
 
-export function buildHeads(design: Pick<GiftDesign, 'style' | 'size'>): { heads: Head[]; dims: Dims } {
-  const style = styleById(design.style)
-  const n = Math.round((SIZES.find((s) => s.id === design.size)?.heads ?? 20) * (style.density ?? 1))
-  const dims = dimsFor(design)
-  const rnd = mulberry32(design.style.length * 7919 + n * 31)
-  const cy = dims.rimY - dims.S * Math.cos(CAP)
-  const heads: Head[] = []
-  const jitter = style.layout === 'garden' ? 0.14 : 0.07
-
-  for (let i = 0; i < n; i++) {
-    const t = (i + 0.5) / n
-    const cz = 1 - (1 - Math.cos(CAP)) * t
-    const sz = Math.sqrt(1 - cz * cz)
-    const th = i * GOLDEN
-    const dir = new THREE.Vector3(sz * Math.cos(th), cz, sz * Math.sin(th))
-    const pos = dir.clone().multiplyScalar(dims.S).add(new THREE.Vector3(0, cy, 0))
-    pos.y += (rnd() - 0.5) * 0.012
-    // a little natural irregularity in where each head points
-    const tilted = dir.clone().add(new THREE.Vector3((rnd() - 0.5) * jitter, 0, (rnd() - 0.5) * jitter)).normalize()
-
-    let entry: MixEntry
-    if (style.layout === 'ring' && style.edge && t > 1 - (style.edge.frac ?? 0.3)) entry = style.edge
-    else if (style.layout === 'heart' && style.edge) entry = inHeart(pos.x / dims.rimR, pos.z / dims.rimR) ? style.mix[0] : style.edge
-    else entry = pickWeighted(style.mix, rnd)
-    heads.push(headFrom(entry, pos, tilted, rnd, style.headScale ?? 1))
-  }
-
-  // greenery / accents peeking out around the rim
-  for (const acc of style.accents ?? []) {
-    const count = Math.max(2, Math.round(acc.count * Math.sqrt(n / 20)))
-    for (let k = 0; k < count; k++) {
-      const th = (k / count) * Math.PI * 2 + rnd() * 0.5
-      const polar = CAP * (0.82 + rnd() * 0.2)
-      const dir = new THREE.Vector3(Math.sin(polar) * Math.cos(th), Math.cos(polar), Math.sin(polar) * Math.sin(th))
-      const pos = dir.clone().multiplyScalar(dims.S + 0.03).add(new THREE.Vector3(0, cy, 0))
-      heads.push(headFrom({ type: acc.type, weight: 1, colors: acc.colors, scale: 1.05 }, pos, dir, rnd))
+export function buildHeads(items: Item[]): { heads: Head[]; dims: Dims } {
+  const n = items.length
+  const heads = items.map((it, k) => {
+    const rnd = mulberry32(it.seed)
+    const dir = slotDir(k)
+      .add(new THREE.Vector3((rnd() - 0.5) * 0.1, 0, (rnd() - 0.5) * 0.1))
+      .normalize()
+    const pos = slotPos(k, n)
+    pos.y += (rnd() - 0.5) * 0.01
+    return {
+      type: it.type,
+      colors: it.colors,
+      open: TYPE_OPEN[it.type] ?? 1,
+      pos,
+      dir,
+      spin: rnd() * Math.PI * 2,
+      scale: GIFT_HEAD_SCALE * (TYPE_SCALE[it.type] ?? 1) * (0.94 + rnd() * 0.12),
+      variant: Math.floor(rnd() * 5),
     }
-  }
-  return { heads, dims }
+  })
+  return { heads, dims: dimsFor(n) }
 }
 
-export const quatFromDir = (dir: THREE.Vector3, spin: number) =>
+export const headRadius = (h: Head) => FLOWERS[h.type].headRadius * h.scale
+
+export const quatFromDir = (dir: THREE.Vector3, spin = 0) =>
   new THREE.Quaternion().setFromUnitVectors(UP, dir).multiply(new THREE.Quaternion().setFromAxisAngle(UP, spin))

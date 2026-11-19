@@ -1,13 +1,15 @@
-import { useFrame } from '@react-three/fiber'
+import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import gsap from 'gsap'
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { FLOWERS, mulberry32, type Part, type StemColors } from '../data/flowers'
-import { buildHeads, quatFromDir, type Dims, type Head } from '../gift/layout'
+import { buildHeads, headRadius, quatFromDir, slotDir, slotPos, type Dims, type Head } from '../gift/layout'
 import { wrapById, type GiftDesign } from '../gift/styles'
 import { mainStemGeo } from './geometry'
+import { useDesign, useUI } from '../state/store'
 import { accentMaterial, createPetalMaterial, setPetalColors } from './materials'
+import { slotAtScreen, stage } from './stage'
 
 const GREEN = { stem: '#5f7f4a', leaf: '#6b8f55' }
 const UP = new THREE.Vector3(0, 1, 0)
@@ -103,12 +105,10 @@ function FlowerBatch({ heads }: { heads: Head[] }) {
 
 /** Dark leafy cap just under the flower heads, so no gaps show through to the stems. */
 function FoliageBase({ dims }: { dims: Dims }) {
-  const cap = 56 * (Math.PI / 180)
-  const R = dims.S * 0.93
-  const cy = dims.rimY - dims.S * Math.cos(cap)
+  if (dims.cap < 0.05) return null
   return (
-    <mesh position-y={cy} receiveShadow>
-      <sphereGeometry args={[R, 40, 16, 0, Math.PI * 2, 0, cap * 0.98]} />
+    <mesh position-y={dims.cy} receiveShadow>
+      <sphereGeometry args={[dims.R * 0.93, 40, 16, 0, Math.PI * 2, 0, dims.cap * 0.98]} />
       <meshStandardMaterial color="#3f5a34" roughness={0.9} side={THREE.DoubleSide} />
     </mesh>
   )
@@ -306,19 +306,120 @@ function Holder() {
   )
 }
 
+// ---------------------------------------------------------------- interaction
+
+const invisible = new THREE.MeshBasicMaterial({ visible: false })
+const unitSphere = new THREE.SphereGeometry(1, 10, 8)
+
+/** One invisible sphere per flower: cheap, reliable picking for click & drag. */
+function PickProxy({ heads }: { heads: Head[] }) {
+  const mesh = useMemo(() => {
+    const m = new THREE.InstancedMesh(unitSphere, invisible, Math.max(1, heads.length))
+    m.count = heads.length
+    heads.forEach((h, i) => {
+      const r = headRadius(h) * 0.95
+      m.setMatrixAt(i, new THREE.Matrix4().compose(h.pos, new THREE.Quaternion(), new THREE.Vector3(r, r, r)))
+    })
+    m.computeBoundingSphere()
+    return m
+  }, [heads])
+  useEffect(() => () => {
+    mesh.dispose()
+  }, [mesh])
+
+  const onDown = (e: ThreeEvent<PointerEvent>) => {
+    if (e.instanceId == null) return
+    if (e.nativeEvent.pointerType === 'mouse' && e.nativeEvent.button !== 0) return
+    e.stopPropagation()
+    const i = e.instanceId
+    const ui = useUI.getState()
+    if (ui.mode !== 'arrange') return
+    ui.set({ selected: i })
+    if (stage.controls) stage.controls.enabled = false
+    const sx = e.nativeEvent.clientX
+    const sy = e.nativeEvent.clientY
+    const pid = e.nativeEvent.pointerId
+    let active = false
+    const move = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      if (!active && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return
+      active = true
+      document.body.style.cursor = 'grabbing'
+      const n = useDesign.getState().design.items.length
+      const slot = slotAtScreen(ev.clientX, ev.clientY, n)
+      useUI.getState().set({ dragHead: i, dropSlot: slot != null && slot !== i ? slot : null })
+    }
+    const end = (ev: PointerEvent) => {
+      if (ev.pointerId !== pid) return
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      document.body.style.cursor = ''
+      const st = useUI.getState()
+      if (active && st.dropSlot != null && ev.type === 'pointerup') useDesign.getState().swapItems(i, st.dropSlot)
+      st.set({ dragHead: null, dropSlot: null })
+      if (stage.controls) stage.controls.enabled = st.mode === 'arrange'
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }
+
+  return (
+    <primitive
+      object={mesh}
+      onPointerDown={onDown}
+      onPointerOver={(e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation()
+        document.body.style.cursor = 'grab'
+      }}
+      onPointerOut={() => (document.body.style.cursor = '')}
+    />
+  )
+}
+
+function Ring({ pos, dir, radius, color, pulse = 0.05 }: { pos: THREE.Vector3; dir: THREE.Vector3; radius: number; color: string; pulse?: number }) {
+  const ref = useRef<THREE.Mesh>(null!)
+  const q = useMemo(() => new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), dir), [dir])
+  useFrame(({ clock }) => ref.current?.scale.setScalar(1 + Math.sin(clock.elapsedTime * 4) * pulse))
+  return (
+    <mesh ref={ref} position={pos.clone().addScaledVector(dir, 0.02)} quaternion={q} renderOrder={5}>
+      <torusGeometry args={[radius, 0.0035, 8, 48]} />
+      <meshBasicMaterial color={color} toneMapped={false} depthTest={false} transparent opacity={0.95} />
+    </mesh>
+  )
+}
+
+function Markers({ heads }: { heads: Head[] }) {
+  const selected = useUI((s) => s.selected)
+  const dropSlot = useUI((s) => s.dropSlot)
+  const libDrag = useUI((s) => s.libDrag)
+  const sel = selected != null ? heads[selected] : null
+  const count = heads.length + (libDrag ? 1 : 0)
+  return (
+    <>
+      {sel && <Ring pos={sel.pos} dir={sel.dir} radius={headRadius(sel) * 1.05} color="#6f8f6a" />}
+      {dropSlot != null && <Ring pos={slotPos(dropSlot, count)} dir={slotDir(dropSlot)} radius={0.06} color="#c2607a" pulse={0.12} />}
+    </>
+  )
+}
+
 // ---------------------------------------------------------------- bouquet
 
-export function GiftBouquet({ design, sway = true, animate = true }: { design: GiftDesign; sway?: boolean; animate?: boolean }) {
-  const { heads, dims } = useMemo(() => buildHeads(design), [design.style, design.size])
+export function GiftBouquet({ design, sway = true, animate = true, interactive = false }: { design: GiftDesign; sway?: boolean; animate?: boolean; interactive?: boolean }) {
+  const { heads, dims } = useMemo(() => buildHeads(design.items), [design.items])
   const flowers = useRef<THREE.Group>(null!)
   const root = useRef<THREE.Group>(null!)
+  const lastCount = useRef(heads.length)
 
-  // a soft "bloom in" whenever the flowers change
+  // a soft "bloom in" when the flowers change (bigger for a whole new bouquet)
   useLayoutEffect(() => {
+    const delta = Math.abs(heads.length - lastCount.current)
+    lastCount.current = heads.length
     if (!animate) return
-    const s = { v: 0.86 }
+    const s = { v: delta > 2 ? 0.86 : 0.975 }
     flowers.current.scale.setScalar(s.v)
-    const tw = gsap.to(s, { v: 1, duration: 0.8, ease: 'back.out(1.6)', onUpdate: () => flowers.current?.scale.setScalar(s.v) })
+    const tw = gsap.to(s, { v: 1, duration: delta > 2 ? 0.8 : 0.45, ease: 'back.out(1.6)', onUpdate: () => flowers.current?.scale.setScalar(s.v) })
     return () => {
       tw.kill()
       flowers.current?.scale.setScalar(1)
@@ -335,11 +436,13 @@ export function GiftBouquet({ design, sway = true, animate = true }: { design: G
     <group ref={root}>
       <Holder />
       <LayeredWrap dims={dims} wrapId={design.wrap} />
-      <group ref={flowers} position-y={dims.bindY} >
+      <group ref={flowers} position-y={dims.bindY}>
         <group position-y={-dims.bindY}>
           <StemBatch heads={heads} bindY={dims.bindY} />
           <FoliageBase dims={dims} />
           <FlowerBatch heads={heads} />
+          {interactive && <PickProxy heads={heads} />}
+          {interactive && <Markers heads={heads} />}
         </group>
       </group>
       <RibbonBand dims={dims} color={design.ribbon} />

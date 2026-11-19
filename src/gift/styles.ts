@@ -1,8 +1,9 @@
-import type { FlowerType, StemColors } from '../data/flowers'
+import { FLOWERS, FLOWER_TYPES, mulberry32, type FlowerType, type StemColors } from '../data/flowers'
+import { MAX_ITEMS, dimsFor, slotPos, type Item } from './layout'
 
 /**
- * Ready-made gift bouquets. A design is just four choices — style, size,
- * wrapping paper and ribbon — so anyone can make something beautiful fast.
+ * Ready-made bouquets are TEMPLATES: they fill the dome slots with flowers,
+ * and the person can then add, swap, recolour or remove any flower.
  */
 
 export type SizeId = 'S' | 'M' | 'L' | 'XL'
@@ -12,8 +13,6 @@ export interface MixEntry {
   type: FlowerType
   weight: number
   colors?: Partial<StemColors>
-  open?: number
-  scale?: number
 }
 
 export interface StyleDef {
@@ -21,34 +20,31 @@ export interface StyleDef {
   name: string
   thai: string
   layout: Layout
-  /** main flowers (weighted random over the dome) */
   mix: MixEntry[]
   /** border (ring) or outside-of-heart flower */
   edge?: MixEntry & { frac?: number }
-  /** sprigs poking out around the rim */
+  /** greenery tucked around the rim */
   accents?: { type: FlowerType; count: number; colors?: Partial<StemColors> }[]
-  headR: number
-  /** more, smaller heads (e.g. heart shapes need resolution) */
-  density?: number
-  headScale?: number
+  defaultSize?: SizeId
   wrap: string
   ribbon: string
 }
 
 export interface GiftDesign {
-  v: 2
-  style: string
-  size: SizeId
+  v: 3
+  items: Item[]
   wrap: string
   ribbon: string
+  /** template it was started from (for naming) */
+  style: string | null
   card: { text: string }
 }
 
 export const SIZES: { id: SizeId; label: string; heads: number }[] = [
-  { id: 'S', label: 'Small', heads: 12 },
-  { id: 'M', label: 'Medium', heads: 20 },
-  { id: 'L', label: 'Large', heads: 32 },
-  { id: 'XL', label: 'Grand', heads: 48 },
+  { id: 'S', label: 'Small', heads: 16 },
+  { id: 'M', label: 'Medium', heads: 28 },
+  { id: 'L', label: 'Large', heads: 44 },
+  { id: 'XL', label: 'Grand', heads: 64 },
 ]
 
 export interface WrapDef {
@@ -92,165 +88,176 @@ const BB_WHITE = { petal: '#fbfaf4', petal2: '#ffffff' }
 
 export const STYLES: StyleDef[] = [
   {
-    id: 'sweet-pink',
-    name: 'Sweet Pink Roses',
-    thai: 'กุหลาบชมพูหวาน',
-    layout: 'dome',
-    mix: [{ type: 'rose', weight: 3, colors: pinkRose, open: 0.72 }, { type: 'rose', weight: 1, colors: lightPinkRose, open: 0.72 }],
-    headR: 0.052,
-    density: 1.4,
-    headScale: 0.9,
-    wrap: 'pearl',
-    ribbon: '#f2a7b8',
+    id: 'sweet-pink', name: 'Sweet Pink Roses', thai: 'กุหลาบชมพูหวาน', layout: 'dome',
+    mix: [{ type: 'rose', weight: 3, colors: pinkRose }, { type: 'rose', weight: 1, colors: lightPinkRose }],
+    wrap: 'pearl', ribbon: '#f2a7b8',
   },
   {
-    id: 'red-heart',
-    name: 'Red Rose Heart',
-    thai: 'หัวใจกุหลาบแดง',
-    layout: 'heart',
-    mix: [{ type: 'rose', weight: 1, colors: redRose, open: 0.7 }],
-    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, scale: 1.1 },
-    headR: 0.046,
-    density: 2,
-    headScale: 0.8,
-    wrap: 'pink-white',
-    ribbon: '#b3263e',
+    id: 'red-heart', name: 'Red Rose Heart', thai: 'หัวใจกุหลาบแดง', layout: 'heart', defaultSize: 'L',
+    mix: [{ type: 'rose', weight: 1, colors: redRose }],
+    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE },
+    wrap: 'pink-white', ribbon: '#b3263e',
   },
   {
-    id: 'classic-red',
-    name: 'Classic Red',
-    thai: 'กุหลาบแดงคลาสสิก',
-    layout: 'ring',
-    mix: [{ type: 'rose', weight: 1, colors: redRose, open: 0.72 }],
-    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.3, scale: 1.1 },
-    headR: 0.05,
-    density: 1.5,
-    headScale: 0.88,
-    wrap: 'black',
-    ribbon: '#b3263e',
+    id: 'classic-red', name: 'Classic Red', thai: 'กุหลาบแดงคลาสสิก', layout: 'ring',
+    mix: [{ type: 'rose', weight: 1, colors: redRose }],
+    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.3 },
+    wrap: 'black', ribbon: '#b3263e',
   },
   {
-    id: 'peony-luxe',
-    name: 'Peony Luxury',
-    thai: 'โบตั๋นหรู',
-    layout: 'dome',
+    id: 'peony-luxe', name: 'Peony Luxury', thai: 'โบตั๋นหรู', layout: 'dome',
     mix: [
-      { type: 'peony', weight: 3, colors: { petal: '#f0a6bb', petal2: '#fde3ea', gradient: 0.6 }, open: 0.85 },
-      { type: 'peony', weight: 1, colors: { petal: '#f7cad3', petal2: '#fff2f4', gradient: 0.55 }, open: 0.75 },
+      { type: 'peony', weight: 3, colors: { petal: '#f0a6bb', petal2: '#fde3ea', gradient: 0.6 } },
+      { type: 'peony', weight: 1, colors: { petal: '#f7cad3', petal2: '#fff2f4', gradient: 0.55 } },
     ],
-    headR: 0.075,
-    wrap: 'pearl',
-    ribbon: '#f2a7b8',
+    wrap: 'pearl', ribbon: '#f2a7b8',
   },
   {
-    id: 'pastel-garden',
-    name: 'Pastel Garden',
-    thai: 'สวนพาสเทล',
-    layout: 'garden',
+    id: 'pastel-garden', name: 'Pastel Garden', thai: 'สวนพาสเทล', layout: 'garden',
     mix: [
-      { type: 'rose', weight: 3, colors: lightPinkRose, open: 0.75 },
-      { type: 'rose', weight: 1, colors: peachRose, open: 0.75 },
+      { type: 'rose', weight: 3, colors: lightPinkRose },
+      { type: 'rose', weight: 1, colors: peachRose },
       { type: 'hydrangea', weight: 1, colors: { petal: '#e6c9e9', petal2: '#f7ecf8' } },
-      { type: 'peony', weight: 1, colors: { petal: '#f2b0bd', petal2: '#fde8ec' }, open: 0.8 },
+      { type: 'peony', weight: 1, colors: { petal: '#f2b0bd', petal2: '#fde8ec' } },
       { type: 'carnation', weight: 1, colors: { petal: '#f4c1c9', petal2: '#fff1f3' } },
     ],
     accents: [{ type: 'eucalyptus', count: 6 }],
-    headR: 0.062,
-    wrap: 'blush',
-    ribbon: '#f2a7b8',
+    wrap: 'blush', ribbon: '#f2a7b8',
   },
   {
-    id: 'sky-blue',
-    name: 'Sky Blue',
-    thai: 'ฟ้าใส',
-    layout: 'garden',
+    id: 'sky-blue', name: 'Sky Blue', thai: 'ฟ้าใส', layout: 'garden',
     mix: [
-      { type: 'rose', weight: 5, colors: whiteRose, open: 0.75 },
+      { type: 'rose', weight: 5, colors: whiteRose },
       { type: 'hydrangea', weight: 1.3, colors: { petal: '#8fb1e6', petal2: '#cfe0f7', center: '#eef3fb' } },
       { type: 'lisianthus', weight: 1, colors: { petal: '#ffffff', petal2: '#cfe0f7', gradient: 0.4 } },
-      { type: 'babysBreath', weight: 1, colors: BB_WHITE, scale: 1.1 },
+      { type: 'babysBreath', weight: 1, colors: BB_WHITE },
     ],
-    headR: 0.062,
-    wrap: 'navy',
-    ribbon: '#ffffff',
+    wrap: 'navy', ribbon: '#ffffff',
   },
   {
-    id: 'pure-white',
-    name: 'Pure White',
-    thai: 'ขาวบริสุทธิ์',
-    layout: 'ring',
-    mix: [{ type: 'rose', weight: 1, colors: whiteRose, open: 0.75 }],
-    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.25, scale: 1.1 },
+    id: 'pure-white', name: 'Pure White', thai: 'ขาวบริสุทธิ์', layout: 'ring',
+    mix: [{ type: 'rose', weight: 1, colors: whiteRose }],
+    edge: { type: 'babysBreath', weight: 1, colors: BB_WHITE, frac: 0.25 },
     accents: [{ type: 'eucalyptus', count: 7 }],
-    headR: 0.052,
-    density: 1.4,
-    headScale: 0.9,
-    wrap: 'sage',
-    ribbon: '#ffffff',
+    wrap: 'sage', ribbon: '#ffffff',
   },
   {
-    id: 'sunshine',
-    name: 'Sunshine',
-    thai: 'สดใสซันไชน์',
-    layout: 'garden',
+    id: 'sunshine', name: 'Sunshine', thai: 'สดใสซันไชน์', layout: 'garden',
     mix: [
       { type: 'gerbera', weight: 2, colors: { petal: '#ff8a3d', petal2: '#ffc27a' } },
       { type: 'gerbera', weight: 1, colors: { petal: '#ffd23f', petal2: '#fff1a8' } },
       { type: 'sunflower', weight: 1 },
       { type: 'daisy', weight: 1 },
-      { type: 'rose', weight: 1, colors: { petal: '#ffcf4a', petal2: '#fff2a8', gradient: 0.5 }, open: 0.75 },
+      { type: 'rose', weight: 1, colors: { petal: '#ffcf4a', petal2: '#fff2a8', gradient: 0.5 } },
     ],
     accents: [{ type: 'lavender', count: 6 }],
-    headR: 0.065,
-    wrap: 'orange',
-    ribbon: '#24324f',
+    wrap: 'orange', ribbon: '#24324f',
   },
   {
-    id: 'pink-cloud',
-    name: 'Pink Cloud',
-    thai: 'เมฆชมพู',
-    layout: 'dome',
+    id: 'pink-cloud', name: 'Pink Cloud', thai: 'เมฆชมพู', layout: 'dome',
     mix: [
-      { type: 'babysBreath', weight: 2, colors: { petal: '#f5b3c8', petal2: '#ffe3ec' }, scale: 1.35 },
-      { type: 'babysBreath', weight: 1, colors: { petal: '#e9a7d6', petal2: '#fbe1f2' }, scale: 1.35 },
+      { type: 'babysBreath', weight: 2, colors: { petal: '#f5b3c8', petal2: '#ffe3ec' } },
+      { type: 'babysBreath', weight: 1, colors: { petal: '#e9a7d6', petal2: '#fbe1f2' } },
     ],
-    headR: 0.055,
-    density: 1.4,
-    wrap: 'pink-white',
-    ribbon: '#f2a7b8',
+    wrap: 'pink-white', ribbon: '#f2a7b8',
   },
 ]
 
-export const styleById = (id: string) => STYLES.find((s) => s.id === id) ?? STYLES[0]
+export const styleById = (id: string | null) => STYLES.find((s) => s.id === id)
 export const wrapById = (id: string) => WRAPS.find((w) => w.id === id) ?? WRAPS[0]
 
-export function giftFromStyle(styleId: string, size: SizeId = 'M'): GiftDesign {
-  const s = styleById(styleId)
-  return { v: 2, style: s.id, size, wrap: s.wrap, ribbon: s.ribbon, card: { text: '' } }
+/** Heart test in the top view; the point of the heart faces the viewer (+z). */
+function inHeart(x: number, z: number) {
+  const X = x * 1.15
+  const Y = -z * 1.12 + 0.24
+  const q = X * X + Y * Y - 1
+  return q * q * q - X * X * Y * Y * Y <= 0
 }
 
+const newSeed = () => (Math.random() * 2 ** 31) | 0
+export const makeItem = (type: FlowerType, colors?: Partial<StemColors>, seed = newSeed()): Item => ({
+  type,
+  colors: { ...FLOWERS[type].colors, ...colors },
+  seed,
+})
+
+/** Fill the dome slots for a template at a given size. */
+export function templateItems(styleId: string, size: SizeId): Item[] {
+  const style = styleById(styleId) ?? STYLES[0]
+  const sz = SIZES.find((s) => s.id === size) ?? SIZES[1]
+  const accents = (style.accents ?? []).flatMap((a) => Array.from({ length: Math.max(2, Math.round((a.count * sz.heads) / 28)) }, () => a))
+  const n = Math.min(MAX_ITEMS, sz.heads + accents.length)
+  const main = n - accents.length
+  const rnd = mulberry32(styleId.length * 7919 + n * 31)
+  const pick = (mix: MixEntry[]) => {
+    let r = rnd() * mix.reduce((s, m) => s + m.weight, 0)
+    for (const m of mix) if ((r -= m.weight) <= 0) return m
+    return mix[mix.length - 1]
+  }
+  const dims = dimsFor(n)
+  const items: Item[] = []
+  for (let k = 0; k < main; k++) {
+    let e: MixEntry
+    if (style.layout === 'ring' && style.edge && k >= main * (1 - (style.edge.frac ?? 0.3))) e = style.edge
+    else if (style.layout === 'heart' && style.edge) {
+      const p = slotPos(k, n)
+      e = inHeart(p.x / dims.rimR, p.z / dims.rimR) ? style.mix[0] : style.edge
+    } else e = pick(style.mix)
+    items.push(makeItem(e.type, e.colors, (rnd() * 2 ** 31) | 0))
+  }
+  // greenery goes in the outermost (rim) slots
+  for (const a of accents) items.push(makeItem(a.type, a.colors, (rnd() * 2 ** 31) | 0))
+  return items
+}
+
+export function giftFromStyle(styleId: string, size?: SizeId): GiftDesign {
+  const s = styleById(styleId) ?? STYLES[0]
+  return { v: 3, items: templateItems(s.id, size ?? s.defaultSize ?? 'M'), wrap: s.wrap, ribbon: s.ribbon, style: s.id, card: { text: '' } }
+}
+
+export const emptyGift = (): GiftDesign => ({ v: 3, items: [], wrap: 'pearl', ribbon: '#f2a7b8', style: null, card: { text: '' } })
 export const defaultGift = () => giftFromStyle('sweet-pink', 'M')
 
 export function randomGift(): GiftDesign {
   const s = STYLES[Math.floor(Math.random() * STYLES.length)]
-  const size = SIZES[1 + Math.floor(Math.random() * 3)].id
-  // mostly the style's own paper/ribbon, sometimes a fresh combination
-  const wrap = Math.random() < 0.6 ? s.wrap : WRAPS[Math.floor(Math.random() * WRAPS.length)].id
-  const ribbon = Math.random() < 0.6 ? s.ribbon : RIBBONS[Math.floor(Math.random() * RIBBONS.length)].color
-  return { v: 2, style: s.id, size, wrap, ribbon, card: { text: '' } }
+  const g = giftFromStyle(s.id, SIZES[1 + Math.floor(Math.random() * 2)].id)
+  if (Math.random() < 0.4) g.wrap = WRAPS[Math.floor(Math.random() * WRAPS.length)].id
+  if (Math.random() < 0.4) g.ribbon = RIBBONS[Math.floor(Math.random() * RIBBONS.length)].color
+  return g
 }
 
-/** Anything loaded from storage is untrusted. */
+const isHex = (s: unknown): s is string => typeof s === 'string' && /^#[0-9a-f]{6}$/i.test(s)
+
+/** Anything loaded from storage is untrusted. Older (v2) saves become their template. */
 export function sanitizeGift(raw: unknown): GiftDesign {
-  const d = defaultGift()
-  if (!raw || typeof raw !== 'object') return d
-  const r = raw as Partial<GiftDesign>
+  if (!raw || typeof raw !== 'object') return defaultGift()
+  const r = raw as Partial<GiftDesign> & { size?: SizeId }
+  if ((raw as { v?: unknown }).v === 2 && typeof r.style === 'string') {
+    const g = giftFromStyle(r.style, SIZES.some((s) => s.id === r.size) ? r.size : undefined)
+    return { ...g, wrap: WRAPS.some((w) => w.id === r.wrap) ? (r.wrap as string) : g.wrap, ribbon: isHex(r.ribbon) ? r.ribbon : g.ribbon }
+  }
+  const items: Item[] = []
+  for (const it of Array.isArray(r.items) ? r.items : []) {
+    if (items.length >= MAX_ITEMS) break
+    if (!it || !FLOWER_TYPES.includes(it.type)) continue
+    const d = FLOWERS[it.type].colors
+    items.push({
+      type: it.type,
+      seed: typeof it.seed === 'number' && Number.isFinite(it.seed) ? it.seed | 0 : newSeed(),
+      colors: {
+        petal: isHex(it.colors?.petal) ? it.colors.petal : d.petal,
+        petal2: isHex(it.colors?.petal2) ? it.colors.petal2 : d.petal2,
+        gradient: typeof it.colors?.gradient === 'number' ? Math.min(1, Math.max(0, it.colors.gradient)) : d.gradient,
+        center: isHex(it.colors?.center) ? it.colors.center : d.center,
+      },
+    })
+  }
   return {
-    v: 2,
-    style: STYLES.some((s) => s.id === r.style) ? (r.style as string) : d.style,
-    size: SIZES.some((s) => s.id === r.size) ? (r.size as SizeId) : d.size,
-    wrap: WRAPS.some((w) => w.id === r.wrap) ? (r.wrap as string) : d.wrap,
-    ribbon: typeof r.ribbon === 'string' && /^#[0-9a-f]{6}$/i.test(r.ribbon) ? r.ribbon : d.ribbon,
+    v: 3,
+    items,
+    wrap: WRAPS.some((w) => w.id === r.wrap) ? (r.wrap as string) : 'pearl',
+    ribbon: isHex(r.ribbon) ? r.ribbon : '#f2a7b8',
+    style: typeof r.style === 'string' && styleById(r.style) ? r.style : null,
     card: { text: typeof r.card?.text === 'string' ? r.card.text.slice(0, 140) : '' },
   }
 }

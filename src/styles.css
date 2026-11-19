@@ -362,3 +362,43 @@ button { font: inherit; color: inherit; }
   .wrap-chip { flex: none; width: 54px; }
   .toolbar { right: auto; }
 }
+
+/* ---------------------------------------------------------------- arranging */
+.gift-panel .tabs { margin: 0 14px 8px; }
+.size-row.compact { margin-bottom: 10px; }
+.size-row.compact .size-chip { padding: 6px 4px; }
+.size-row.compact strong { font-size: 17px; }
+.style-card.empty { border: 1.5px dashed rgba(61, 53, 50, 0.25); background: transparent; justify-content: center; }
+.empty-plus { display: grid; place-items: center; width: 76px; height: 76px; font-size: 34px; font-weight: 300; color: var(--sage-deep); }
+.flower-lib .small { margin: 0 2px 10px; }
+.lib-count { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--ink-soft); margin: 0 2px 6px; }
+.flower-row { display: flex; align-items: center; gap: 10px; padding: 7px 4px; border-bottom: 1px solid var(--line); }
+.flower-row:last-child { border-bottom: 0; }
+.flower-row .lib-glyph { width: 44px; height: 44px; flex: none; }
+.flower-row-text { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.flower-dots { display: flex; flex-wrap: wrap; gap: 7px; }
+.flower-dot {
+  width: 28px; height: 28px; border-radius: 50%; border: 0; padding: 0; cursor: grab; touch-action: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14); transition: transform 0.15s var(--ease);
+  user-select: none; -webkit-user-select: none;
+}
+.flower-dot:hover { transform: scale(1.12); }
+.flower-dot:active { cursor: grabbing; }
+.flower-dot.is-on { box-shadow: 0 0 0 2px var(--cream-2), 0 0 0 3.5px var(--ink); }
+.flower-dot:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
+.selected-bar {
+  margin: 0 14px 8px; padding: 10px 12px; border-radius: 14px; background: #fff; border: 1px solid rgba(111, 143, 106, 0.4);
+  animation: toast-in 0.25s var(--ease);
+}
+.selected-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.selected-head strong { font-family: var(--serif); font-weight: 400; font-size: 18px; }
+.selected-head .muted { flex: 1; font-size: 11px; }
+.selected-head .icon-btn { width: 26px; height: 26px; font-size: 16px; }
+.selected-actions { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+
+@media (max-width: 819px) {
+  .gift-panel { height: 50%; }
+  .flower-dot { width: 32px; height: 32px; touch-action: none; }
+  .gift-panel .tabs { margin: 0 10px 6px; }
+  .selected-bar { margin: 0 10px 6px; }
+}

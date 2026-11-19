@@ -15,7 +15,7 @@ import { Studio } from './Studio'
 
 const FOV = 35
 const HERO_DESIGN = giftFromStyle('sweet-pink', 'L')
-const HERO_DIMS = dimsFor(HERO_DESIGN)
+const HERO_DIMS = dimsFor(HERO_DESIGN.items.length)
 
 /** Desktop: options panel on the right. Mobile: options sheet at the bottom. */
 function panelOffset(w: number, h: number, mode: 'hero' | 'arrange') {
@@ -45,14 +45,14 @@ function shotFor(mode: 'hero' | 'arrange', w: number, h: number, dims: Dims) {
 function CameraRig() {
   const mode = useUI((s) => s.mode)
   const reduced = useUI((s) => s.reducedMotion)
-  const style = useDesign((s) => s.design.style)
-  const sizeId = useDesign((s) => s.design.size)
+  // re-frame only when the bouquet grows/shrinks noticeably (not on every flower)
+  const bucket = useDesign((s) => Math.round(s.design.items.length / 6))
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const size = useThree((s) => s.size)
   const controls = useRef<OrbitControlsImpl>(null!)
   const offset = useRef({ x: 0, y: 0 })
   const last = useRef<{ mode: string; S: number } | null>(null)
-  const dims = useMemo(() => (mode === 'hero' ? HERO_DIMS : dimsFor({ style, size: sizeId })), [mode, style, sizeId])
+  const dims = useMemo(() => (mode === 'hero' ? HERO_DIMS : dimsFor(Math.max(12, bucket * 6))), [mode, bucket])
 
   const applyOffset = () => {
     const { x, y } = offset.current
@@ -169,7 +169,7 @@ function BenchStation() {
   const reduced = useUI((s) => s.reducedMotion)
   return (
     <group position={BENCH_ROOT}>
-      <GiftBouquet design={design} sway={!reduced} animate={!reduced} />
+      <GiftBouquet design={design} sway={!reduced} animate={!reduced} interactive />
     </group>
   )
 }
@@ -218,6 +218,10 @@ export function Scene() {
       dpr={low ? [1, 1.25] : [1, 1.75]}
       camera={{ fov: FOV, near: 0.05, far: 40, position: [-2.4, 1.6, 2.2] }}
       gl={{ antialias: false, powerPreference: 'high-performance' }}
+      onPointerMissed={() => {
+        const ui = useUI.getState()
+        if (ui.dragHead == null && !ui.libDrag) ui.set({ selected: null })
+      }}
     >
       <PerformanceMonitor
         flipflops={3}
