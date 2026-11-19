@@ -238,6 +238,10 @@ const STYLE_NAMES: Record<string, Tr> = {
   'red-heart': ['Red Rose Heart', 'หัวใจกุหลาบแดง', 'ຫົວໃຈກຸຫຼາບແດງ'],
   'classic-red': ['Classic Red', 'กุหลาบแดงคลาสสิก', 'ກຸຫຼາບແດງຄລາສສິກ'],
   'peony-luxe': ['Peony Luxury', 'โบตั๋นหรู', 'ໂບຕັ໋ນຫຼູຫຼາ'],
+  'sunflower-joy': ['Sunflower Joy', 'ทานตะวันสดใส', 'ທານຕະເວັນສົດໃສ'],
+  'daisy-meadow': ['Daisy Meadow', 'ทุ่งเดซี่', 'ທົ່ງເດຊີ່'],
+  'tulip-pastel': ['Pastel Tulips', 'ทิวลิปพาสเทล', 'ທິວລິບພາສເທລ'],
+  'lavender-dream': ['Lavender Dream', 'ลาเวนเดอร์ดรีม', 'ລາເວນເດີດຣີມ'],
 }
 
 const KEY = 'bloom-studio:lang'

@@ -115,6 +115,46 @@ export const STYLES: StyleDef[] = [
     ],
     wrap: 'pearl', ribbon: '#f2a7b8',
   },
+  {
+    id: 'sunflower-joy', name: 'Sunflower Joy', thai: 'ทานตะวันสดใส', layout: 'garden',
+    mix: [
+      { type: 'sunflower', weight: 3 },
+      { type: 'daisy', weight: 1.5 },
+      { type: 'babysBreath', weight: 1, colors: BB_WHITE },
+    ],
+    accents: [{ type: 'eucalyptus', count: 5 }],
+    wrap: 'kraft', ribbon: '#24324f',
+  },
+  {
+    id: 'daisy-meadow', name: 'Daisy Meadow', thai: 'ทุ่งเดซี่', layout: 'garden',
+    mix: [
+      { type: 'daisy', weight: 4 },
+      { type: 'daisy', weight: 1.5, colors: { petal: '#f6b8c8', petal2: '#fde3ea' } },
+      { type: 'babysBreath', weight: 1, colors: BB_WHITE },
+    ],
+    accents: [{ type: 'eucalyptus', count: 6 }],
+    wrap: 'sage', ribbon: '#ffffff',
+  },
+  {
+    id: 'tulip-pastel', name: 'Pastel Tulips', thai: 'ทิวลิปพาสเทล', layout: 'garden',
+    mix: [
+      { type: 'tulip', weight: 2, colors: { petal: '#f4a6b7', petal2: '#fde3ea' } },
+      { type: 'tulip', weight: 1.5, colors: { petal: '#fbf8f1', petal2: '#ffffff' } },
+      { type: 'tulip', weight: 1, colors: { petal: '#f6c945', petal2: '#fff2a8' } },
+      { type: 'tulip', weight: 1, colors: { petal: '#8e5aa8', petal2: '#c9a7e3' } },
+    ],
+    wrap: 'pearl', ribbon: '#b9a3e3',
+  },
+  {
+    id: 'lavender-dream', name: 'Lavender Dream', thai: 'ลาเวนเดอร์ดรีม', layout: 'garden',
+    mix: [
+      { type: 'rose', weight: 3, colors: { petal: '#c9a7e3', petal2: '#efe3f8', gradient: 0.5, center: '#8a62b0' } },
+      { type: 'lisianthus', weight: 2 },
+      { type: 'hydrangea', weight: 1, colors: { petal: '#c8b0e6', petal2: '#efe6f8' } },
+    ],
+    accents: [{ type: 'lavender', count: 7 }],
+    wrap: 'lilac', ribbon: '#ffffff',
+  },
 ]
 
 export const styleById = (id: string | null) => STYLES.find((s) => s.id === id)

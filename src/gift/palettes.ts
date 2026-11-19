@@ -55,7 +55,7 @@ export const FLOWER_COLORS: Record<FlowerType, ColorOption[]> = {
     opt('gerbera', 'Pink', { petal: '#f48fb1', petal2: '#fde0ea' }),
     opt('gerbera', 'Red', { petal: '#d8283f', petal2: '#f26d7d' }),
   ],
-  daisy: [opt('daisy', 'White')],
+  daisy: [opt('daisy', 'White'), opt('daisy', 'Pink', { petal: '#f6b8c8', petal2: '#fde3ea' })],
   chrysanthemum: [
     opt('chrysanthemum', 'Cream'),
     opt('chrysanthemum', 'Yellow', { petal: '#f6c945', petal2: '#fff2a8' }),
