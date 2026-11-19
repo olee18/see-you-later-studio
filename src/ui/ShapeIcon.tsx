@@ -16,9 +16,9 @@ export function ShapeIcon({ id, size = 56 }: { id: ShapeId; size?: number }) {
     case 'korean':
       return (
         <svg {...common}>
-          <path d="M8 16 L28 50 L48 16 L40 24 L34 12 L28 22 L22 12 L16 24 Z" fill="#f3ece4" stroke="#cbbfb2" strokeWidth="1.2" />
+          <path d="M10 18 Q28 4 46 18 L28 50 Z" fill="#f3ece4" stroke="#cbbfb2" strokeWidth="1.2" />
           {blooms(28, 22, 5)}
-          <path d="M14 26 L28 50 L42 26 L36 32 L28 28 L20 32 Z" fill="#f4c3cd" stroke="#d9a3ae" strokeWidth="1" />
+          <path d="M13 25 Q28 34 43 25 L28 50 Z" fill="#f4c3cd" stroke="#d9a3ae" strokeWidth="1" />
           <circle cx="28" cy="40" r="2.6" fill="#e98fa3" />
         </svg>
       )

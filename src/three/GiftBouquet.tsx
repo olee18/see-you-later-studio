@@ -185,7 +185,7 @@ function sheetGeo(o: SheetOpts) {
       // soft rounded top edge (like a real folded sheet), not a sharp point
       const top = o.y0 + o.height * (1 - o.peak * u * u)
       const y = o.y0 + (top - o.y0) * v
-      const r = o.r0 + (y - o.y0) * o.slope + o.flare * v * v * v + 0.005 * Math.sin(u * 4 + o.seed) * v * v
+      const r = o.r0 + (y - o.y0) * o.slope + o.flare * v * v * v + 0.003 * Math.sin(u * 3 + o.seed) * v * v
       pos.push(r * Math.cos(th), y, r * Math.sin(th))
       uv.push((u + 1) / 2, v)
     }
@@ -217,29 +217,34 @@ function LayeredWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
     const slope = wrapSlope(dims)
     const base = dims.rimY - WRAP_Y0
     const S = dims.S
-    // front (+z) sheets lower so the flowers show; back sheets taller
-    const frontBack = (th: number) => 1 - 0.08 * Math.max(0, Math.sin(th)) + 0.14 * Math.max(0, -Math.sin(th))
-    const ring = (count: number, offset: number, span: number, lift: number, flare: number, dr: number, peak: number) =>
-      Array.from({ length: count }, (_, i) => {
-        const thc = offset + (i / count) * Math.PI * 2
-        return sheetGeo({ thc, span, height: (base + lift) * frontBack(thc), y0: WRAP_Y0, r0: WRAP_R0 + dr, slope: slope * (1 + dr * 2), flare, peak, seed: i * 1.7 + offset })
-      })
-    const innerSheets = ring(6, 0, 1.45, 0.01 + 0.2 * S, 0.04 + 0.08 * S, 0, 0.42)
-    const midSheets = ring(7, 0.45, 1.3, -0.01 + 0.12 * S, 0.07 + 0.14 * S, 0.008, 0.38)
-    const skirt = ring(5, 0.2, 1.75, -0.02, 0.11 + 0.2 * S, 0.016, 0.3)
+    // Like a florist's Korean wrap: a few big, smooth sheets fanned at the back
+    // (light inner layer peeking above the coloured outer layer) and one wide
+    // sheet wrapped across the front, cut in a soft curve under the flowers.
+    const BACK = -Math.PI / 2
+    const FRONT = Math.PI / 2
+    const sheet = (thc: number, span: number, height: number, dr: number, flare: number, peak: number, seed: number) =>
+      sheetGeo({ thc, span, height, y0: WRAP_Y0, r0: WRAP_R0 + dr, slope: slope * (1 + dr * 2), flare, peak, seed })
+    const innerSheets = [-1.2, -0.4, 0.4, 1.2].map((o, i) =>
+      sheet(BACK + o, 1.3, (base + 0.05 + 0.22 * S) * (1 - 0.08 * Math.abs(o)), 0, 0.05 + 0.08 * S, 0.34, i * 1.3),
+    )
+    const outerSheets = [-0.95, 0, 0.95].map((o, i) =>
+      sheet(BACK + o, 1.55, (base + 0.12 * S) * (1 - 0.1 * Math.abs(o)), 0.006, 0.08 + 0.12 * S, 0.3, 5 + i * 1.7),
+    )
+    // front: lower in the middle, sweeping up at the sides (negative peak)
+    const front = sheet(FRONT, 2.7, base * 0.88, 0.012, 0.04 + 0.06 * S, -0.18, 11)
     const inner = mergeGeometries(innerSheets)!
-    const outer = mergeGeometries([...midSheets, ...skirt])!
-    ;[...innerSheets, ...midSheets, ...skirt].forEach((g) => g.dispose())
+    const outer = mergeGeometries([...outerSheets, front])!
+    ;[...innerSheets, ...outerSheets, front].forEach((g) => g.dispose())
     return { inner, outer }
   }, [dims])
   useEffect(() => () => { inner.dispose(); outer.dispose() }, [inner, outer])
   return (
     <group>
       <mesh geometry={inner} castShadow receiveShadow>
-        <meshPhysicalMaterial color={wrap.inner} roughness={0.72} sheen={0.6} sheenColor="#ffffff" side={THREE.DoubleSide} />
+        <meshPhysicalMaterial color={wrap.inner} roughness={0.6} sheen={1} sheenRoughness={0.4} sheenColor="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       <mesh geometry={outer} castShadow receiveShadow>
-        <meshPhysicalMaterial color={wrap.outer} roughness={0.66} sheen={0.5} sheenColor="#ffffff" clearcoat={0.15} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial color={wrap.outer} roughness={0.62} sheen={0.5} sheenColor="#ffffff" clearcoat={0.2} clearcoatRoughness={0.5} side={THREE.DoubleSide} />
       </mesh>
     </group>
   )
@@ -266,10 +271,10 @@ function ConeWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
   return (
     <group>
       <mesh geometry={inner} castShadow receiveShadow>
-        <meshPhysicalMaterial color={wrap.inner} roughness={0.72} sheen={0.6} sheenColor="#ffffff" side={THREE.DoubleSide} />
+        <meshPhysicalMaterial color={wrap.inner} roughness={0.6} sheen={1} sheenRoughness={0.4} sheenColor="#ffffff" side={THREE.DoubleSide} />
       </mesh>
       <mesh geometry={outer} castShadow receiveShadow>
-        <meshPhysicalMaterial color={wrap.outer} roughness={0.66} sheen={0.5} sheenColor="#ffffff" clearcoat={0.15} side={THREE.DoubleSide} />
+        <meshPhysicalMaterial color={wrap.outer} roughness={0.62} sheen={0.5} sheenColor="#ffffff" clearcoat={0.2} clearcoatRoughness={0.5} side={THREE.DoubleSide} />
       </mesh>
     </group>
   )
@@ -284,10 +289,10 @@ function CuffWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
     const y0 = dims.bindY - 0.06
     const ring = (count: number, offset: number, h: number, dr: number, flare: number) =>
       Array.from({ length: count }, (_, i) =>
-        sheetGeo({ thc: offset + (i / count) * Math.PI * 2, span: 1.5, height: h, y0, r0: CUFF_R0 + dr, slope: CUFF_SLOPE, flare, peak: 0.35, seed: i * 2.3 + offset }),
+        sheetGeo({ thc: offset + (i / count) * Math.PI * 2, span: (Math.PI * 2) / count + 0.5, height: h, y0, r0: CUFF_R0 + dr, slope: CUFF_SLOPE, flare, peak: 0.3, seed: i * 2.3 + offset }),
       )
-    const a = ring(6, 0, 0.15 + 0.04 * dims.S, 0, 0.04)
-    const b = ring(6, 0.5, 0.12 + 0.03 * dims.S, 0.006, 0.06)
+    const a = ring(4, 0, 0.15 + 0.04 * dims.S, 0, 0.04)
+    const b = ring(3, 0.6, 0.12 + 0.03 * dims.S, 0.006, 0.06)
     const inner = mergeGeometries(a)!
     const outer = mergeGeometries(b)!
     ;[...a, ...b].forEach((g) => g.dispose())
