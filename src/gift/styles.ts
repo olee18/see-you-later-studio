@@ -173,14 +173,6 @@ export function giftFromStyle(styleId: string, size?: SizeId): GiftDesign {
 export const emptyGift = (): GiftDesign => ({ v: 3, items: [], wrap: 'pearl', ribbon: '#f2a7b8', stand: DEFAULT_STAND, shape: DEFAULT_SHAPE, style: null, card: { text: '' } })
 export const defaultGift = () => giftFromStyle('sweet-pink', 'M')
 
-export function randomGift(): GiftDesign {
-  const s = STYLES[Math.floor(Math.random() * STYLES.length)]
-  const g = giftFromStyle(s.id, SIZES[1 + Math.floor(Math.random() * 2)].id)
-  if (Math.random() < 0.4) g.wrap = WRAPS[Math.floor(Math.random() * WRAPS.length)].id
-  if (Math.random() < 0.4) g.ribbon = RIBBONS[Math.floor(Math.random() * RIBBONS.length)].color
-  return g
-}
-
 const isHex = (s: unknown): s is string => typeof s === 'string' && /^#[0-9a-f]{6}$/i.test(s)
 
 /** Anything loaded from storage is untrusted. Older (v2) saves become their template. */

@@ -156,9 +156,6 @@ export function GiftPanel() {
             <span>{design.style ? style(design.style) : t('ownStyle')}</span>
           </div>
         </div>
-        <button className="btn ghost sm" onClick={() => useDesign.getState().surprise()} title={t('surpriseTitle')}>
-          {t('surprise')}
-        </button>
       </header>
       <div className="tabs" role="tablist">
         {([['flowers', t('tabFlowers')], ['templates', t('tabReady')], ['paper', t('tabPaper')]] as [typeof tab, string][]).map(([v, t]) => (

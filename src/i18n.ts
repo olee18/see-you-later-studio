@@ -45,8 +45,6 @@ const STR = {
   myBouquet: ['My Bouquet', 'ช่อของฉัน', 'ຊໍ່ຂອງຂ້ອຍ'],
   nFlowers: ['{n} flowers', '{n} ดอก', '{n} ດອກ'],
   ownStyle: ['Arranged by you', 'จัดเอง', 'ຈັດເອງ'],
-  surprise: ['✦ Surprise me', '✦ สุ่มให้หน่อย', '✦ ສຸ່ມໃຫ້ແດ່'],
-  surpriseTitle: ['Pick a random bouquet', 'สุ่มช่อดอกไม้ให้', 'ສຸ່ມຊໍ່ດອກໄມ້ໃຫ້'],
   tabFlowers: ['Arrange flowers', 'จัดดอกไม้', 'ຈັດດອກໄມ້'],
   tabReady: ['Ready-made', 'ช่อสำเร็จรูป', 'ຊໍ່ສຳເລັດຮູບ'],
   tabPaper: ['Decorate', 'ตกแต่ง', 'ຕົກແຕ່ງ'],

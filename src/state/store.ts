@@ -4,7 +4,7 @@ import type { FlowerType, StemColors } from '../data/flowers'
 import { MAX_ITEMS } from '../gift/layout'
 import { bouquetLabel, t, useLang } from '../i18n'
 import {
-  STYLES, emptyGift, giftFromStyle, makeItem, randomGift, sanitizeGift, styleById,
+  STYLES, emptyGift, giftFromStyle, makeItem, sanitizeGift, styleById,
   type GiftDesign, type SizeId,
 } from '../gift/styles'
 
@@ -38,7 +38,6 @@ interface DesignState {
   // starting points
   applyTemplate: (styleId: string, size?: SizeId) => void
   startEmpty: () => void
-  surprise: () => void
   // arranging
   addItem: (type: FlowerType, colors: StemColors, slot?: number | null) => boolean
   removeItem: (i: number) => void
@@ -96,7 +95,7 @@ export const useDesign = create<DesignState>()(
         set({ bouquets: list, currentId: b.id, design: b.design, past: [], future: [] })
         useUI.getState().set({ selected: null, pop: null })
       }
-      // templates / surprise change the flowers, paper and bow; the message and the stand stay
+      // templates change the flowers, paper and bow; the message and the stand stay
       const keepCard = (d: GiftDesign) => ({ ...d, card: get().design.card, stand: get().design.stand, shape: get().design.shape })
       return {
         design: initial.design,
@@ -137,10 +136,6 @@ export const useDesign = create<DesignState>()(
           useUI.getState().set({ selected: null })
           const d = get().design
           commit({ ...emptyGift(), wrap: d.wrap, ribbon: d.ribbon, stand: d.stand, shape: d.shape, card: d.card })
-        },
-        surprise: () => {
-          useUI.getState().set({ selected: null })
-          commit(keepCard(randomGift()))
         },
 
         addItem: (type, colors, slot) => {
