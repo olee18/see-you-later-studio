@@ -6,6 +6,7 @@ import { BIND, HEAD_SCALE, stemTarget } from '../state/layout'
 import { useDesign, useUI } from '../state/store'
 import type { Design } from '../state/types'
 import { StemView } from './StemView'
+import { wrapTexture } from './patterns'
 
 // ---------------------------------------------------------------- wrapping cone
 
@@ -52,14 +53,28 @@ function makeWrapGeometry(scale: number, topBase: number, backRise: number, phas
   return g
 }
 
+const WRAP_LOOK: Record<Design['wrap']['material'], Partial<THREE.MeshPhysicalMaterialParameters>> = {
+  kraft: { roughness: 0.95, sheen: 0 },
+  matte: { roughness: 0.82, sheen: 0.4, sheenColor: new THREE.Color('#ffffff') },
+  cellophane: { roughness: 0.05, transparent: true, opacity: 0.32, clearcoat: 1, clearcoatRoughness: 0.05, iridescence: 0.7, depthWrite: false },
+  fabric: { roughness: 0.95, sheen: 1, sheenRoughness: 0.7, sheenColor: new THREE.Color('#ffffff') },
+}
+
 function Wrap({ wrap }: { wrap: Design['wrap'] }) {
   const outer = useMemo(() => makeWrapGeometry(1, 0.4, 0.12, 0, 7), [])
   const inner = useMemo(() => makeWrapGeometry(0.965, 0.38, 0.1, 0.7, 13), [])
   useEffect(() => () => { outer.dispose(); inner.dispose() }, [outer, inner])
+  const map = useMemo(() => wrapTexture(wrap), [wrap])
   return (
     <group>
-      <mesh geometry={outer} castShadow receiveShadow>
-        <meshPhysicalMaterial color={wrap.color} roughness={0.82} sheen={0.4} sheenColor="#ffffff" side={THREE.DoubleSide} />
+      <mesh geometry={outer} castShadow={wrap.material !== 'cellophane'} receiveShadow renderOrder={wrap.material === 'cellophane' ? 2 : 0}>
+        <meshPhysicalMaterial
+          key={wrap.material}
+          {...WRAP_LOOK[wrap.material]}
+          color={map ? '#ffffff' : wrap.color}
+          map={map}
+          side={THREE.DoubleSide}
+        />
       </mesh>
       <mesh geometry={inner} receiveShadow>
         <meshPhysicalMaterial color={wrap.color2} roughness={0.85} side={THREE.DoubleSide} />
@@ -67,6 +82,12 @@ function Wrap({ wrap }: { wrap: Design['wrap'] }) {
     </group>
   )
 }
+
+// [x, y, rotation-z, size]
+const CLASSIC_BOW: [number, number, number, number][] = [[-0.028, 0.004, -0.25, 1], [0.028, 0.004, 0.25, 1]]
+const LOOP_BOW: [number, number, number, number][] = [
+  [-0.026, 0.012, -0.55, 0.85], [0.026, 0.012, 0.55, 0.85], [-0.03, -0.006, 0.25, 0.95], [0.03, -0.006, -0.25, 0.95], [0, 0.022, 1.57, 0.6],
+]
 
 function Ribbon({ ribbon }: { ribbon: Design['ribbon'] }) {
   const y = BIND.y
@@ -79,9 +100,9 @@ function Ribbon({ ribbon }: { ribbon: Design['ribbon'] }) {
       </mesh>
       {ribbon.bow !== 'none' && (
         <group position={[0, 0, r + 0.004]}>
-          {[-1, 1].map((sx) => (
-            <mesh key={sx} position={[sx * 0.028, 0.004, 0.004]} rotation={[0.2, sx * 0.35, sx * 0.25]} scale={[1, 0.62, 0.45]} castShadow>
-              <torusGeometry args={[0.026, 0.0055, 10, 32]} />
+          {(ribbon.bow === 'loop' ? LOOP_BOW : CLASSIC_BOW).map(([x, y, rz, size], i) => (
+            <mesh key={i} position={[x, y, 0.004]} rotation={[0.2, Math.sign(x) * 0.35, rz]} scale={[size, size * 0.62, 0.45]} castShadow>
+              <torusGeometry args={[0.026, 0.0055 * (0.6 + ribbon.width * 18), 10, 32]} />
               <meshPhysicalMaterial color={ribbon.color} roughness={0.35} sheen={1} />
             </mesh>
           ))}

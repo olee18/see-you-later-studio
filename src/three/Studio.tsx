@@ -1,14 +1,21 @@
 import { Environment, Lightformer } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useUI } from '../state/store'
+import { useDesign, useUI } from '../state/store'
+import type { LightMood } from '../state/types'
 import { BENCH_ROOT, HERO_ROOT } from './stage'
 
-const WALL = '#f3ebe3'
 const FLOOR = '#e7d9c7'
 
-function Window({ position, size = [2.2, 2.6] as [number, number] }: { position: [number, number, number]; size?: [number, number] }) {
+/** Lighting moods: hemisphere fill, key "sun" through the window, window glow, IBL strength. */
+export const MOODS: Record<LightMood, { sky: string; ground: string; hemi: number; sun: string; sunI: number; sunOffset: [number, number, number]; glow: string; glowI: number; env: number }> = {
+  morning: { sky: '#fffaf3', ground: '#eadccb', hemi: 0.9, sun: '#fff2e2', sunI: 2.6, sunOffset: [-2.2, 4.2, -2.4], glow: '#fffaf2', glowI: 2.2, env: 1.15 },
+  golden: { sky: '#ffe6c8', ground: '#d9b48f', hemi: 0.65, sun: '#ffb25e', sunI: 3.4, sunOffset: [-3.4, 2.1, -1.6], glow: '#ffd29a', glowI: 2.5, env: 0.85 },
+  studio: { sky: '#ffffff', ground: '#dcdcdc', hemi: 1.05, sun: '#ffffff', sunI: 1.9, sunOffset: [0.9, 4.6, 2.6], glow: '#f2f5ff', glowI: 1.5, env: 1.35 },
+}
+
+function Window({ position, size = [2.2, 2.6] as [number, number], glow }: { position: [number, number, number]; size?: [number, number]; glow: THREE.Color }) {
   const [w, h] = size
   const frame = '#fbf7f2'
   const bars: [number, number, number, number][] = [
@@ -25,7 +32,7 @@ function Window({ position, size = [2.2, 2.6] as [number, number] }: { position:
     <group position={position}>
       <mesh>
         <planeGeometry args={[w, h]} />
-        <meshBasicMaterial color={new THREE.Color('#fffaf2').multiplyScalar(2.2)} toneMapped={false} />
+        <meshBasicMaterial color={glow} toneMapped={false} />
       </mesh>
       {bars.map(([x, y, bw, bh], i) => (
         <mesh key={i} position={[x, y, 0.03]} castShadow>
@@ -127,24 +134,25 @@ function Shelf() {
 }
 
 /** Key light follows whichever station is active so its shadow map stays crisp. */
-function SunLight() {
+function SunLight({ mood }: { mood: LightMood }) {
   const mode = useUI((s) => s.mode)
+  const m = MOODS[mood]
   const light = useRef<THREE.DirectionalLight>(null!)
   const scene = useThree((s) => s.scene)
   useEffect(() => {
     const at = mode === 'hero' ? HERO_ROOT : BENCH_ROOT
     const l = light.current
-    l.position.set(at.x - 2.2, 4.2, at.z - 2.4)
+    l.position.set(at.x + m.sunOffset[0], m.sunOffset[1], at.z + m.sunOffset[2])
     l.target.position.set(at.x, at.y, at.z)
     scene.add(l.target)
     l.shadow.needsUpdate = true
     return () => void scene.remove(l.target)
-  }, [mode, scene])
+  }, [mode, scene, m])
   return (
     <directionalLight
       ref={light}
-      intensity={2.6}
-      color="#fff2e2"
+      intensity={m.sunI}
+      color={m.sun}
       castShadow
       shadow-mapSize={[2048, 2048]}
       shadow-bias={-0.0004}
@@ -161,13 +169,17 @@ function SunLight() {
 }
 
 export function Studio() {
+  const bg = useDesign((s) => s.design.background)
+  const m = MOODS[bg.mood]
+  const wall = useMemo(() => new THREE.Color(bg.color).multiplyScalar(0.975), [bg.color])
+  const glow = useMemo(() => new THREE.Color(m.glow).multiplyScalar(m.glowI), [m])
   return (
     <>
-      <color attach="background" args={['#f6efe8']} />
-      <fog attach="fog" args={['#f6efe8', 7, 18]} />
-      <hemisphereLight args={['#fffaf3', '#eadccb', 0.9]} />
-      <SunLight />
-      <Environment resolution={256} frames={1} environmentIntensity={1.15}>
+      <color attach="background" args={[bg.color]} />
+      <fog attach="fog" args={[bg.color, 7, 18]} />
+      <hemisphereLight args={[m.sky, m.ground, m.hemi]} />
+      <SunLight mood={bg.mood} />
+      <Environment resolution={256} frames={1} environmentIntensity={m.env}>
         <Lightformer form="rect" intensity={4} color="#fff6ea" position={[-3, 2.5, -5]} scale={[4, 3, 1]} />
         <Lightformer form="rect" intensity={2.5} color="#fff6ea" position={[2, 2.5, -5]} scale={[3, 3, 1]} />
         <Lightformer form="circle" intensity={1.6} color="#ffffff" position={[0, 6, 0]} rotation-x={Math.PI / 2} scale={6} />
@@ -182,19 +194,19 @@ export function Studio() {
       </mesh>
       <mesh position={[0, 2.6, -4]} receiveShadow>
         <planeGeometry args={[16, 5.2]} />
-        <meshStandardMaterial color={WALL} roughness={0.95} />
+        <meshStandardMaterial color={wall} roughness={0.95} />
       </mesh>
       <mesh position={[-7, 2.6, 0]} rotation-y={Math.PI / 2} receiveShadow>
         <planeGeometry args={[12, 5.2]} />
-        <meshStandardMaterial color={WALL} roughness={0.95} />
+        <meshStandardMaterial color={wall} roughness={0.95} />
       </mesh>
       <mesh position={[7, 2.6, 0]} rotation-y={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[12, 5.2]} />
-        <meshStandardMaterial color={WALL} roughness={0.95} />
+        <meshStandardMaterial color={wall} roughness={0.95} />
       </mesh>
       <mesh position={[0, 2.6, 6]} rotation-y={Math.PI} receiveShadow>
         <planeGeometry args={[16, 5.2]} />
-        <meshStandardMaterial color={WALL} roughness={0.95} />
+        <meshStandardMaterial color={wall} roughness={0.95} />
       </mesh>
       {/* baseboard */}
       <mesh position={[0, 0.06, -3.98]}>
@@ -202,8 +214,8 @@ export function Studio() {
         <meshStandardMaterial color="#fbf7f2" roughness={0.6} />
       </mesh>
 
-      <Window position={[-3.4, 2.15, -3.97]} />
-      <Window position={[2.4, 2.15, -3.97]} size={[1.8, 2.6]} />
+      <Window position={[-3.4, 2.15, -3.97]} glow={glow} />
+      <Window position={[2.4, 2.15, -3.97]} size={[1.8, 2.6]} glow={glow} />
       <Shelf />
       <Pedestal />
       <Workbench />

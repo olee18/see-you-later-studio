@@ -10,6 +10,7 @@ import { cylGeo, petalGeo, sphereGeo } from '../three/geometry'
 export type FlowerType =
   | 'rose' | 'tulip' | 'peony' | 'sunflower' | 'hydrangea' | 'lily' | 'carnation'
   | 'orchid' | 'gerbera' | 'babysBreath' | 'eucalyptus' | 'fern' | 'ruscus'
+  | 'daisy' | 'chrysanthemum' | 'ranunculus' | 'lisianthus' | 'calla' | 'marigold' | 'lavender' | 'jasmine'
 
 export type Role = 'petal' | 'center' | 'leaf' | 'stem' | 'accent'
 export type BloomStage = 'bud' | 'half' | 'full'
@@ -40,7 +41,7 @@ export interface FlowerDef {
   heightBias: number
   /** 0 = wants the bouquet centre, 1 = wants the edge (used by auto-arrange) */
   centerBias: number
-  glyph: { petals: number; kind: 'round' | 'narrow' | 'cluster' | 'spray' | 'leafy' | 'frond' | 'cup' }
+  glyph: { petals: number; kind: 'round' | 'narrow' | 'cluster' | 'spray' | 'leafy' | 'frond' | 'cup' | 'spike' }
   build: (open: number, rnd: Rnd) => Part[]
 }
 
@@ -392,6 +393,92 @@ const fern: FlowerDef['build'] = (open, rnd) => {
   ]
 }
 
+const daisy: FlowerDef['build'] = (open, rnd) => [
+  { geo: petalGeo('strap', 0.15, -0.02), role: 'petal', matrices: ring(open, rnd, { n: 22, len: [0.03, 0.03], width: [0.22, 0.22], phiClosed: [20, 20], phiOpen: [86, 86], radius: [0.009, 0.009], jitter: 0.08 }) },
+  { geo: sphereGeo(), role: 'center', matrices: [blobM(V(0, 0.003, 0), 0.01, 0.006, 0.01)] },
+  stemLeaves(rnd, 2, 0.04, 0.3, -0.1),
+]
+
+const chrysanthemum: FlowerDef['build'] = (open, rnd) => [
+  { geo: petalGeo('strap', 0.9, 0.06), role: 'petal', matrices: ring(open, rnd, { n: 72, spiral: true, len: [0.01, 0.03], width: [0.28, 0.24], phiClosed: [4, 30], phiOpen: [8, 84], radius: [0.001, 0.006], y: [0.012, 0.002] }) },
+  stemLeaves(rnd, 2, 0.05, 0.55),
+]
+
+const ranunculus: FlowerDef['build'] = (open, rnd) => [
+  { geo: petalGeo('round', 1.0, 0.04), role: 'petal', matrices: ring(open, rnd, { n: 48, spiral: true, len: [0.011, 0.026], width: [1.05, 1.15], phiClosed: [4, 32], phiOpen: [8, 76], radius: [0.001, 0.01], y: [0.01, 0.002] }) },
+  { geo: sphereGeo('lo'), role: 'center', matrices: [blobM(V(0, 0.011, 0), 0.0032)] },
+  { geo: petalGeo('leaf', 0.2, -0.1), role: 'leaf', matrices: Array.from({ length: 5 }, (_, i) => petalM((i * 72 + rnd() * 10) * DEG, 115 * DEG, 0.005, -0.002, 0.016, 0.006)) },
+  stemLeaves(rnd, 2, 0.045, 0.4),
+]
+
+const lisianthus: FlowerDef['build'] = (open, rnd) => {
+  const stamens = Array.from({ length: 5 }, (_, i) => segM(V(0, 0.003, 0), V(Math.cos(i * 1.26) * 0.005, 0.02, Math.sin(i * 1.26) * 0.005), 0.0009))
+  return [
+    { geo: petalGeo('round', 0.9, -0.04, 0.6), role: 'petal', matrices: ring(open, rnd, { n: 5, len: [0.042, 0.042], width: [1.05, 1.05], phiClosed: [6, 6], phiOpen: [52, 52], radius: [0.003, 0.003], jitter: 0.25 }) },
+    { geo: cylGeo(), role: 'accent', accent: '#e9e3a4', matrices: stamens },
+    { geo: sphereGeo('lo'), role: 'center', matrices: [blobM(V(0, 0.022, 0), 0.0025, 0.004, 0.0025)] },
+    stemLeaves(rnd, 2, 0.045, 0.35),
+  ]
+}
+
+const calla: FlowerDef['build'] = (open) => [
+  { geo: petalGeo('heart', 2.2, -0.12), role: 'petal', matrices: [petalM(0, lerp(4, 16, open) * DEG, 0.002, 0, 0.078, 0.062)] },
+  { geo: cylGeo(), role: 'center', matrices: [segM(V(-0.004, 0, 0), V(-0.006, 0.046, 0), 0.0035)] },
+]
+
+const marigold: FlowerDef['build'] = (open, rnd) => [
+  { geo: petalGeo('heart', 0.7, -0.02, 1.3), role: 'petal', matrices: ring(open, rnd, { n: 85, spiral: true, len: [0.01, 0.02], width: [1.0, 1.1], phiClosed: [5, 40], phiOpen: [10, 112], radius: [0.001, 0.012], y: [0.014, 0.002] }) },
+  stemLeaves(rnd, 2, 0.05, 0.3),
+]
+
+const lavender: FlowerDef['build'] = (open, rnd) => {
+  const florets: THREE.Matrix4[] = []
+  for (let i = 0; i < 16; i++) {
+    const t = i / 15
+    for (let k = 0; k < 6; k++) {
+      const a = k * 1.05 + i * 0.5 + rnd() * 0.3
+      const r = 0.0036 * (1 - t * 0.5)
+      florets.push(blobM(V(Math.cos(a) * r, i * 0.0062, Math.sin(a) * r), 0.0026 * (1 - t * 0.45) * (0.7 + 0.3 * open), 0.0034 * (1 - t * 0.45)))
+    }
+  }
+  return [
+    { geo: sphereGeo('lo'), role: 'petal', matrices: florets },
+    { geo: cylGeo(), role: 'stem', matrices: [segM(V(0, -0.01, 0), V(0, 0.095, 0), 0.0012)] },
+    stemLeaves(rnd, 2, 0.05, 0.12, -0.12),
+  ]
+}
+
+const jasmine: FlowerDef['build'] = (open, rnd) => {
+  const branches: THREE.Matrix4[] = []
+  const petals: THREE.Matrix4[] = []
+  const centers: THREE.Matrix4[] = []
+  const leaves: THREE.Matrix4[] = []
+  for (let b = 0; b < 5; b++) {
+    const a = (b / 5) * Math.PI * 2 + rnd() * 0.6
+    const p = (15 + rnd() * 40) * DEG
+    const start = V(0, -0.05 + rnd() * 0.05, 0)
+    const end = start.clone().add(V(Math.cos(a) * Math.sin(p), Math.cos(p), Math.sin(a) * Math.sin(p)).multiplyScalar(0.05 + rnd() * 0.04))
+    branches.push(segM(start, end, 0.0011))
+    leaves.push(petalM(a + 1.2, 60 * DEG, 0.002, start.y + 0.02, 0.03, 0.013))
+    const k = 4 + Math.floor(rnd() * 3)
+    for (let i = 0; i < k; i++) {
+      const tip = end.clone().add(V((rnd() - 0.5) * 0.035, rnd() * 0.02, (rnd() - 0.5) * 0.035))
+      branches.push(segM(end, tip, 0.0006))
+      const n = tip.clone().sub(end).normalize().add(V(0, 0.8, 0))
+      const F = frameM(tip, n, 0.85 + rnd() * 0.3, rnd() * 6)
+      const bud = rnd() < 0.25
+      for (let q = 0; q < 5; q++) petals.push(F.clone().multiply(petalM((q * 72 * DEG), lerp(15, bud ? 25 : 84, open) * DEG, 0.0008, 0, 0.0085, 0.0052)))
+      centers.push(F.clone().multiply(blobM(V(0, 0.0005, 0), 0.0012)))
+    }
+  }
+  return [
+    { geo: cylGeo(), role: 'stem', matrices: branches },
+    { geo: petalGeo('oval', 0.2, -0.04), role: 'petal', matrices: petals },
+    { geo: sphereGeo('lo'), role: 'center', matrices: centers },
+    { geo: petalGeo('leaf', 0.3, -0.08), role: 'leaf', matrices: leaves },
+  ]
+}
+
 // ---------------------------------------------------------------- registry
 
 export const FLOWERS: Record<FlowerType, FlowerDef> = {
@@ -404,10 +491,18 @@ export const FLOWERS: Record<FlowerType, FlowerDef> = {
   carnation: { type: 'carnation', name: 'Carnation', latin: 'Dianthus', category: 'flower', colors: { petal: '#e86f8a', petal2: '#fbd2da', gradient: 0.45, center: '#6b8f5a' }, headRadius: 0.035, heightBias: -0.01, centerBias: 0.55, glyph: { petals: 9, kind: 'round' }, build: carnation },
   orchid: { type: 'orchid', name: 'Orchid', latin: 'Phalaenopsis', category: 'flower', colors: { petal: '#f6f0f7', petal2: '#e3b0da', gradient: 0.35, center: '#c43d6b' }, headRadius: 0.07, heightBias: 0.03, centerBias: 0.3, glyph: { petals: 5, kind: 'round' }, build: orchid },
   gerbera: { type: 'gerbera', name: 'Gerbera', latin: 'Gerbera', category: 'flower', colors: { petal: '#ff8a5c', petal2: '#ffc6a3', gradient: 0.4, center: '#3b2a1c' }, headRadius: 0.06, heightBias: 0.01, centerBias: 0.45, glyph: { petals: 16, kind: 'narrow' }, build: gerbera },
+  daisy: { type: 'daisy', name: 'Daisy', latin: 'Bellis', category: 'flower', colors: { petal: '#fbfaf5', petal2: '#f6d6e0', gradient: 0.25, center: '#f2c230' }, headRadius: 0.045, heightBias: 0.01, centerBias: 0.6, glyph: { petals: 16, kind: 'narrow' }, build: daisy },
+  chrysanthemum: { type: 'chrysanthemum', name: 'Chrysanthemum', latin: 'Chrysanthemum', category: 'flower', colors: { petal: '#f3e3b0', petal2: '#fff6dc', gradient: 0.5, center: '#c9b26a' }, headRadius: 0.05, heightBias: 0, centerBias: 0.4, glyph: { petals: 20, kind: 'narrow' }, build: chrysanthemum },
+  ranunculus: { type: 'ranunculus', name: 'Ranunculus', latin: 'Ranunculus', category: 'flower', colors: { petal: '#f4a38c', petal2: '#fde1d4', gradient: 0.55, center: '#7d9a52' }, headRadius: 0.042, heightBias: -0.005, centerBias: 0.4, glyph: { petals: 10, kind: 'round' }, build: ranunculus },
+  lisianthus: { type: 'lisianthus', name: 'Lisianthus', latin: 'Eustoma', category: 'flower', colors: { petal: '#fbf7fb', petal2: '#8e5aa8', gradient: 0.75, center: '#d9d48a' }, headRadius: 0.045, heightBias: 0.02, centerBias: 0.45, glyph: { petals: 5, kind: 'round' }, build: lisianthus },
+  calla: { type: 'calla', name: 'Calla Lily', latin: 'Zantedeschia', category: 'flower', colors: { petal: '#fbf8f1', petal2: '#f2ead2', gradient: 0.3, center: '#f2c94c' }, headRadius: 0.04, heightBias: 0.04, centerBias: 0.35, glyph: { petals: 1, kind: 'cup' }, build: calla },
+  marigold: { type: 'marigold', name: 'Marigold', latin: 'Tagetes', category: 'flower', colors: { petal: '#f39a1e', petal2: '#ffc54d', gradient: 0.45, center: '#c46a10' }, headRadius: 0.045, heightBias: 0, centerBias: 0.45, glyph: { petals: 12, kind: 'round' }, build: marigold },
   babysBreath: { type: 'babysBreath', name: "Baby's Breath", latin: 'Gypsophila', category: 'filler', colors: { petal: '#fbfaf4', petal2: '#ffffff', gradient: 0.2, center: '#e8e4d0' }, headRadius: 0.06, heightBias: 0.03, centerBias: 0.8, glyph: { petals: 0, kind: 'spray' }, build: babysBreath },
   eucalyptus: { type: 'eucalyptus', name: 'Eucalyptus', latin: 'Eucalyptus', category: 'filler', colors: { petal: '#8aa597', petal2: '#bccdc2', gradient: 0.4, center: '#6f8a7c' }, headRadius: 0.05, heightBias: 0.05, centerBias: 0.75, glyph: { petals: 0, kind: 'leafy' }, build: eucalyptus },
   fern: { type: 'fern', name: 'Fern', latin: 'Rumohra', category: 'filler', colors: { petal: '#4c7a42', petal2: '#7fa66b', gradient: 0.5, center: '#3f6a35' }, headRadius: 0.06, heightBias: 0.03, centerBias: 0.9, glyph: { petals: 0, kind: 'frond' }, build: fern },
   ruscus: { type: 'ruscus', name: 'Ruscus', latin: 'Ruscus', category: 'filler', colors: { petal: '#5b8a48', petal2: '#93b673', gradient: 0.35, center: '#4a7038' }, headRadius: 0.045, heightBias: 0.05, centerBias: 0.7, glyph: { petals: 0, kind: 'leafy' }, build: ruscus },
+  lavender: { type: 'lavender', name: 'Lavender', latin: 'Lavandula', category: 'filler', colors: { petal: '#8f7cc4', petal2: '#b9a9e0', gradient: 0.5, center: '#6f5aa8' }, headRadius: 0.03, heightBias: 0.07, centerBias: 0.85, glyph: { petals: 0, kind: 'spike' }, build: lavender },
+  jasmine: { type: 'jasmine', name: 'Jasmine', latin: 'Jasminum', category: 'filler', colors: { petal: '#fffdf6', petal2: '#ffffff', gradient: 0.15, center: '#f1e7b8' }, headRadius: 0.05, heightBias: 0.03, centerBias: 0.8, glyph: { petals: 0, kind: 'spray' }, build: jasmine },
 }
 
 export const FLOWER_TYPES = Object.keys(FLOWERS) as FlowerType[]

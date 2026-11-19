@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { MAX_STEMS } from './state/layout'
 import { requestRemove, useDesign, useUI } from './state/store'
 import { Scene } from './three/Scene'
 import { Inspector } from './ui/Inspector'
+import { BouquetSwitcher } from './ui/BouquetSwitcher'
 import { DragGhost, Library } from './ui/Library'
+import { StylePanel } from './ui/StylePanel'
 
 function useReducedMotionSync() {
   useEffect(() => {
@@ -57,34 +59,22 @@ function Hero() {
 
 function Toolbar() {
   const count = useDesign((s) => s.design.stems.length)
-  const [confirmClear, setConfirmClear] = useState(false)
-  useEffect(() => {
-    if (!confirmClear) return
-    const t = setTimeout(() => setConfirmClear(false), 3000)
-    return () => clearTimeout(t)
-  }, [confirmClear])
+  const styleOpen = useUI((s) => s.styleOpen)
   return (
     <div className="toolbar" role="toolbar" aria-label="Bouquet tools">
-      <button className="btn ghost" onClick={() => useUI.getState().set({ mode: 'hero', selectedId: null })}>
-        ← Studio
+      <button className="btn ghost" onClick={() => useUI.getState().set({ mode: 'hero', selectedId: null })} aria-label="Back to the studio">
+        ←<span className="desk-only"> Studio</span>
       </button>
-      <span className="toolbar-count">
+      <BouquetSwitcher />
+      <span className="toolbar-count" title="Stems in this bouquet">
         {count}/{MAX_STEMS}
       </span>
-      <button className="btn ghost" disabled={count < 2} onClick={() => useDesign.getState().autoArrange()} title="Tallest focal flowers to the centre, fillers to the edge">
-        Auto-arrange
-      </button>
       <button
-        className={`btn ghost ${confirmClear ? 'danger' : ''}`}
-        disabled={count === 0}
-        onClick={() => {
-          if (!confirmClear) return setConfirmClear(true)
-          useDesign.getState().clear()
-          useUI.getState().set({ selectedId: null })
-          setConfirmClear(false)
-        }}
+        className={`btn ${styleOpen ? 'primary' : 'ghost'}`}
+        onClick={() => useUI.getState().set({ styleOpen: !styleOpen, selectedId: null })}
+        aria-pressed={styleOpen}
       >
-        {confirmClear ? 'Tap again to clear' : 'Clear'}
+        Style
       </button>
     </div>
   )
@@ -126,6 +116,7 @@ export default function App() {
       <div className="studio-ui" aria-hidden={mode !== 'arrange'}>
         <Library />
         <Inspector />
+        <StylePanel />
         <Toolbar />
         <EmptyHint />
       </div>

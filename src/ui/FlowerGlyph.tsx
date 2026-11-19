@@ -29,6 +29,18 @@ export function FlowerGlyph({ type, size = 44 }: { type: FlowerType; size?: numb
             ))}
           </g>
         )
+      case 'spike':
+        return (
+          <g>
+            <path d="M24 46 L24 8" stroke="#7d9873" strokeWidth="1.3" />
+            {Array.from({ length: 9 }, (_, i) => (
+              <g key={i}>
+                <ellipse cx={22.2} cy={30 - i * 2.6} rx={2.2 - i * 0.12} ry={2.6} fill={i % 2 ? petal2 : petal} />
+                <ellipse cx={25.8} cy={31 - i * 2.6} rx={2.2 - i * 0.12} ry={2.6} fill={i % 2 ? petal : petal2} />
+              </g>
+            ))}
+          </g>
+        )
       case 'frond':
         return (
           <g>

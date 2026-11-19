@@ -99,12 +99,13 @@ export const StemView = memo(function StemView({ stem, greenery, interactive, sw
   useLayoutEffect(() => {
     if (!fresh.current || started.current) return
     started.current = true
+    const delay = freshIds.get(stem.id) ?? 0
     freshIds.delete(stem.id)
     if (useUI.getState().reducedMotion) return
     anim.current.s = 0.001
     anim.current.lift = 0.16
-    gsap.to(anim.current, { s: 1, duration: 0.75, ease: 'back.out(1.5)' })
-    gsap.to(anim.current, { lift: 0, duration: 1.0, ease: 'power3.out' })
+    gsap.to(anim.current, { s: 1, duration: 0.75, delay, ease: 'back.out(1.5)' })
+    gsap.to(anim.current, { lift: 0, duration: 1.0, delay, ease: 'power3.out' })
   }, [stem.id])
 
   // removal animation

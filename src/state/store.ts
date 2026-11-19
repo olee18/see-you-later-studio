@@ -1,128 +1,49 @@
 import { create } from 'zustand'
 import { createJSONStorage, persist, type StateStorage } from 'zustand/middleware'
-import { FLOWERS, FLOWER_TYPES, type FlowerType, type StemColors } from '../data/flowers'
+import type { FlowerType, StemColors } from '../data/flowers'
+import { arrangeStems, defaultDesign, makeStem, sanitizeDesign, uid } from './design'
 import { MAX_STEMS, autoSlot } from './layout'
 import type { Design, Stem } from './types'
 
-// ---------------------------------------------------------------- design model
+export { defaultDesign, makeStem, sampleDesign, sanitizeDesign } from './design'
 
-const uid = () =>
-  typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID().slice(0, 8)
-    : Math.random().toString(36).slice(2, 10)
+/** ids of stems added this session → play the placement animation once (value = delay in s) */
+export const freshIds = new Map<string, number>()
 
-export function makeStem(type: FlowerType, slot: number, colors?: Partial<StemColors>): Stem {
-  const seed = (Math.random() * 2 ** 31) | 0
-  return {
-    id: uid(),
-    type,
-    slot,
-    dr: 0,
-    da: 0,
-    dh: 0,
-    lean: 0,
-    nod: 0,
-    spin: Math.random() * Math.PI * 2,
-    bloom: 'full',
-    colors: { ...FLOWERS[type].colors, ...colors },
-    seed,
-  }
+export const MAX_BOUQUETS = 30
+
+export interface SavedBouquet {
+  id: string
+  name: string
+  updatedAt: number
+  /** made by a theme / Surprise Me and not edited since → safe to replace in place */
+  generated?: boolean
+  design: Design
 }
 
-export function defaultDesign(): Design {
-  return {
-    v: 1,
-    stems: [],
-    greenery: { stem: '#5f7f4a', leaf: '#6b8f55' },
-    wrap: { color: '#f1d8cf', color2: '#fbf3ee', material: 'matte', pattern: 'none' },
-    ribbon: { color: '#c98b8f', width: 0.022, bow: 'classic' },
-    background: { color: '#f6efe8', mood: 'morning' },
-    card: { text: '' },
-  }
-}
-
-/** Order stems centre → edge by type preference and give them slots 0..n-1. */
-export function arrangeStems(stems: Stem[]): Stem[] {
-  const sorted = [...stems].sort((a, b) => FLOWERS[a.type].centerBias - FLOWERS[b.type].centerBias)
-  return sorted.map((s, i) => ({ ...s, slot: i, dr: 0, da: 0 }))
-}
-
-/** The finished bouquet shown on the hero pedestal. */
-export function sampleDesign(): Design {
-  const d = defaultDesign()
-  const list: [FlowerType, Partial<StemColors>?][] = [
-    ['peony'], ['peony', { petal: '#f6d3d0', petal2: '#fff3ef' }],
-    ['rose'], ['rose', { petal: '#f3e2d4', petal2: '#fff7ef' }], ['rose', { petal: '#e8a0ac' }], ['rose'],
-    ['hydrangea', { petal: '#f3f0ea', petal2: '#dfe8d6', center: '#f6f3ea' }], ['lily'],
-    ['carnation', { petal: '#f2b7c0' }], ['carnation', { petal: '#f2b7c0' }], ['orchid'],
-    ['rose', { petal: '#f3e2d4', petal2: '#fff7ef' }], ['peony', { petal: '#eaa3b2' }], ['rose', { petal: '#e8a0ac' }],
-    ['hydrangea', { petal: '#f3f0ea', petal2: '#dfe8d6', center: '#f6f3ea' }], ['carnation', { petal: '#f6e4dc' }], ['tulip', { petal: '#f4b6b9', petal2: '#fde3df' }],
-    ['ruscus'], ['ruscus'], ['eucalyptus'], ['eucalyptus'], ['babysBreath'], ['babysBreath'], ['eucalyptus'], ['fern'], ['babysBreath'], ['eucalyptus'],
-  ]
-  d.stems = arrangeStems(list.map(([t, c], i) => ({ ...makeStem(t, i, c), seed: 1000 + i * 77, spin: i * 1.7 })))
-  return d
-}
-
-const isHex = (s: unknown): s is string => typeof s === 'string' && /^#[0-9a-f]{6}$/i.test(s)
-const num = (v: unknown, lo: number, hi: number, dflt: number) =>
-  typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : dflt
-
-/** Defensive load: anything from storage (or a share link later) is untrusted. */
-export function sanitizeDesign(raw: unknown): Design {
-  const base = defaultDesign()
-  if (!raw || typeof raw !== 'object') return base
-  const r = raw as Partial<Design>
-  const used = new Set<number>()
-  const stems: Stem[] = []
-  for (const s of Array.isArray(r.stems) ? r.stems : []) {
-    if (stems.length >= MAX_STEMS) break
-    if (!s || !FLOWER_TYPES.includes(s.type)) continue
-    let slot = Number.isInteger(s.slot) && s.slot >= 0 && s.slot < MAX_STEMS && !used.has(s.slot) ? s.slot : autoSlot(s.type, used)
-    if (slot == null) continue
-    used.add(slot)
-    const dc = FLOWERS[s.type].colors
-    stems.push({
-      id: typeof s.id === 'string' ? s.id.slice(0, 16) : uid(),
-      type: s.type,
-      slot,
-      dr: num(s.dr, -0.08, 0.08, 0),
-      da: num(s.da, -0.6, 0.6, 0),
-      dh: num(s.dh, -0.14, 0.14, 0),
-      lean: num(s.lean, -0.6, 0.6, 0),
-      nod: num(s.nod, -0.9, 0.9, 0),
-      spin: num(s.spin, -10, 10, 0),
-      bloom: s.bloom === 'bud' || s.bloom === 'half' ? s.bloom : 'full',
-      colors: {
-        petal: isHex(s.colors?.petal) ? s.colors.petal : dc.petal,
-        petal2: isHex(s.colors?.petal2) ? s.colors.petal2 : dc.petal2,
-        gradient: num(s.colors?.gradient, 0, 1, dc.gradient),
-        center: isHex(s.colors?.center) ? s.colors.center : dc.center,
-      },
-      seed: num(s.seed, 0, 2 ** 31, 1) | 0,
-    })
-  }
-  return {
-    ...base,
-    stems,
-    greenery: { stem: isHex(r.greenery?.stem) ? r.greenery.stem : base.greenery.stem, leaf: isHex(r.greenery?.leaf) ? r.greenery.leaf : base.greenery.leaf },
-    wrap: { ...base.wrap, ...(r.wrap && isHex(r.wrap.color) ? { color: r.wrap.color } : {}) },
-    ribbon: { ...base.ribbon, ...(r.ribbon && isHex(r.ribbon.color) ? { color: r.ribbon.color } : {}) },
-    card: { text: typeof r.card?.text === 'string' ? r.card.text.slice(0, 140) : '' },
-  }
-}
-
-// ---------------------------------------------------------------- stores
-
-/** ids of stems added this session → play the placement animation once */
-export const freshIds = new Set<string>()
+type DesignPatch = { [K in keyof Omit<Design, 'v' | 'stems'>]?: Partial<Design[K]> }
 
 interface DesignState {
   design: Design
+  currentId: string
+  bouquets: SavedBouquet[]
+  // stems
   addStem: (type: FlowerType, slot?: number | null) => string | null
   updateStem: (id: string, patch: Partial<Stem>) => void
   removeStem: (id: string) => void
+  recolorType: (type: FlowerType, colors: Partial<StemColors>) => void
   autoArrange: () => void
   clear: () => void
+  // whole-design styling
+  updateDesign: (patch: DesignPatch) => void
+  setDesign: (design: Design) => void
+  // bouquet collection
+  applyGenerated: (design: Design, name: string) => void
+  newBouquet: () => void
+  switchBouquet: (id: string) => void
+  renameBouquet: (id: string, name: string) => void
+  duplicateBouquet: (id: string) => void
+  deleteBouquet: (id: string) => void
 }
 
 const safeStorage: StateStorage = {
@@ -137,44 +58,159 @@ const safeStorage: StateStorage = {
   },
 }
 
+function nextName(bouquets: SavedBouquet[], base: string) {
+  const names = new Set(bouquets.map((b) => b.name))
+  if (!names.has(base)) return base
+  for (let i = 2; ; i++) if (!names.has(`${base} ${i}`)) return `${base} ${i}`
+}
+
+function firstBouquet(): SavedBouquet {
+  return { id: uid(), name: 'My Bouquet', updatedAt: Date.now(), design: defaultDesign() }
+}
+
+const initial = firstBouquet()
+
 export const useDesign = create<DesignState>()(
   persist(
-    (set, get) => ({
-      design: defaultDesign(),
-      addStem: (type, slot) => {
-        const d = get().design
-        if (d.stems.length >= MAX_STEMS) return null
-        const occupied = new Set(d.stems.map((s) => s.slot))
-        const s = slot != null && !occupied.has(slot) ? slot : autoSlot(type, occupied)
-        if (s == null) return null
-        const stem = makeStem(type, s)
-        freshIds.add(stem.id)
-        set({ design: { ...d, stems: [...d.stems, stem] } })
-        return stem.id
-      },
-      updateStem: (id, patch) => {
-        const d = get().design
-        set({ design: { ...d, stems: d.stems.map((s) => (s.id === id ? { ...s, ...patch } : s)) } })
-      },
-      removeStem: (id) => {
-        const d = get().design
-        set({ design: { ...d, stems: d.stems.filter((s) => s.id !== id) } })
-      },
-      autoArrange: () => {
-        const d = get().design
-        set({ design: { ...d, stems: arrangeStems(d.stems) } })
-      },
-      clear: () => set({ design: { ...get().design, stems: [] } }),
-    }),
+    (set, get) => {
+      /** Write a new version of the current design (and mark it user-edited). */
+      const commit = (design: Design, generated = false) => {
+        const { currentId, bouquets } = get()
+        set({
+          design,
+          bouquets: bouquets.map((b) => (b.id === currentId ? { ...b, design, updatedAt: Date.now(), generated } : b)),
+        })
+      }
+      const openBouquet = (b: SavedBouquet, list: SavedBouquet[]) => {
+        set({ bouquets: list, currentId: b.id, design: b.design })
+        useUI.getState().set({ selectedId: null, removing: [] })
+      }
+
+      return {
+        design: initial.design,
+        currentId: initial.id,
+        bouquets: [initial],
+
+        addStem: (type, slot) => {
+          const d = get().design
+          if (d.stems.length >= MAX_STEMS) return null
+          const occupied = new Set(d.stems.map((s) => s.slot))
+          const s = slot != null && !occupied.has(slot) ? slot : autoSlot(type, occupied)
+          if (s == null) return null
+          const stem = makeStem(type, s)
+          freshIds.set(stem.id, 0)
+          commit({ ...d, stems: [...d.stems, stem] })
+          return stem.id
+        },
+        updateStem: (id, patch) => {
+          const d = get().design
+          commit({ ...d, stems: d.stems.map((s) => (s.id === id ? { ...s, ...patch } : s)) })
+        },
+        removeStem: (id) => {
+          const d = get().design
+          commit({ ...d, stems: d.stems.filter((s) => s.id !== id) })
+        },
+        recolorType: (type, colors) => {
+          const d = get().design
+          commit({ ...d, stems: d.stems.map((s) => (s.type === type ? { ...s, colors: { ...s.colors, ...colors } } : s)) })
+        },
+        autoArrange: () => {
+          const d = get().design
+          commit({ ...d, stems: arrangeStems(d.stems) })
+        },
+        clear: () => commit({ ...get().design, stems: [] }),
+
+        updateDesign: (patch) => {
+          const d = get().design
+          const next = { ...d } as Design
+          for (const k of Object.keys(patch) as (keyof DesignPatch)[]) {
+            ;(next as unknown as Record<string, unknown>)[k] = { ...d[k], ...patch[k] }
+          }
+          commit(next)
+        },
+        setDesign: (design) => commit(design),
+
+        applyGenerated: (design, name) => {
+          const st = get()
+          const cur = st.bouquets.find((b) => b.id === st.currentId)
+          design.stems.forEach((s, i) => freshIds.set(s.id, i * 0.035))
+          if (cur && (cur.generated || cur.design.stems.length === 0)) {
+            set({
+              design,
+              bouquets: st.bouquets.map((b) =>
+                b.id === cur.id ? { ...b, design, generated: true, updatedAt: Date.now(), name: b.generated || b.name.startsWith('My Bouquet') ? nextName(st.bouquets.filter((x) => x.id !== b.id), name) : b.name } : b,
+              ),
+            })
+            useUI.getState().set({ selectedId: null })
+          } else {
+            if (st.bouquets.length >= MAX_BOUQUETS) return useUI.getState().notify(`You can keep up to ${MAX_BOUQUETS} bouquets — delete one first.`)
+            const b: SavedBouquet = { id: uid(), name: nextName(st.bouquets, name), updatedAt: Date.now(), generated: true, design }
+            openBouquet(b, [b, ...st.bouquets])
+            useUI.getState().notify(`Started a new bouquet: ${b.name}`)
+          }
+        },
+        newBouquet: () => {
+          const st = get()
+          if (st.bouquets.length >= MAX_BOUQUETS) return useUI.getState().notify(`You can keep up to ${MAX_BOUQUETS} bouquets — delete one first.`)
+          const d = defaultDesign()
+          // keep the current styling so a new bouquet feels like "same studio, fresh stems"
+          const b: SavedBouquet = { id: uid(), name: nextName(st.bouquets, 'My Bouquet'), updatedAt: Date.now(), design: { ...d, background: st.design.background } }
+          openBouquet(b, [b, ...st.bouquets])
+        },
+        switchBouquet: (id) => {
+          const b = get().bouquets.find((x) => x.id === id)
+          if (b && id !== get().currentId) openBouquet(b, get().bouquets)
+        },
+        renameBouquet: (id, name) => {
+          const clean = name.trim().slice(0, 40) || 'Untitled bouquet'
+          set({ bouquets: get().bouquets.map((b) => (b.id === id ? { ...b, name: clean } : b)) })
+        },
+        duplicateBouquet: (id) => {
+          const st = get()
+          const src = st.bouquets.find((b) => b.id === id)
+          if (!src) return
+          if (st.bouquets.length >= MAX_BOUQUETS) return useUI.getState().notify(`You can keep up to ${MAX_BOUQUETS} bouquets — delete one first.`)
+          const design: Design = { ...src.design, stems: src.design.stems.map((s) => ({ ...s, id: uid() })) }
+          const b: SavedBouquet = { id: uid(), name: nextName(st.bouquets, `${src.name} copy`), updatedAt: Date.now(), design }
+          openBouquet(b, [b, ...st.bouquets])
+        },
+        deleteBouquet: (id) => {
+          const st = get()
+          let list = st.bouquets.filter((b) => b.id !== id)
+          if (list.length === 0) list = [firstBouquet()]
+          if (id === st.currentId) openBouquet(list[0], list)
+          else set({ bouquets: list })
+        },
+      }
+    },
     {
       name: 'bloom-studio:design',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => safeStorage),
-      partialize: (s) => ({ design: s.design }),
-      merge: (persisted, current) => ({
-        ...current,
-        design: sanitizeDesign((persisted as { design?: unknown } | undefined)?.design),
-      }),
+      partialize: (s) => ({ bouquets: s.bouquets, currentId: s.currentId }),
+      migrate: (persisted, version) => {
+        // v1 stored a single design
+        if (version < 2) {
+          const p = persisted as { design?: unknown } | undefined
+          const b = { ...firstBouquet(), design: sanitizeDesign(p?.design) }
+          return { bouquets: [b], currentId: b.id }
+        }
+        return persisted
+      },
+      merge: (persisted, current) => {
+        const p = persisted as { bouquets?: unknown; currentId?: unknown } | undefined
+        const raw = Array.isArray(p?.bouquets) ? (p!.bouquets as Partial<SavedBouquet>[]) : []
+        const bouquets: SavedBouquet[] = raw.slice(0, MAX_BOUQUETS).map((b) => ({
+          id: typeof b.id === 'string' ? b.id.slice(0, 16) : uid(),
+          name: typeof b.name === 'string' ? b.name.slice(0, 40) : 'My Bouquet',
+          updatedAt: typeof b.updatedAt === 'number' ? b.updatedAt : Date.now(),
+          generated: !!b.generated,
+          design: sanitizeDesign(b.design),
+        }))
+        if (bouquets.length === 0) return current
+        const cur = bouquets.find((b) => b.id === p?.currentId) ?? bouquets[0]
+        return { ...current, bouquets, currentId: cur.id, design: cur.design }
+      },
     },
   ),
 )
@@ -204,6 +240,7 @@ interface UIState {
   toast: { msg: string; key: number } | null
   reducedMotion: boolean
   lowQuality: boolean
+  styleOpen: boolean
   set: (p: Partial<Omit<UIState, 'set' | 'notify'>>) => void
   notify: (msg: string) => void
 }
@@ -218,6 +255,7 @@ export const useUI = create<UIState>()((set) => ({
   toast: null,
   reducedMotion: false,
   lowQuality: false,
+  styleOpen: typeof window !== 'undefined' ? window.innerWidth >= 820 : true,
   set: (p) => set(p),
   notify: (msg) => set({ toast: { msg, key: Date.now() } }),
 }))
