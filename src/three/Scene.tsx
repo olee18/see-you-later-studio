@@ -29,7 +29,7 @@ function panelOffset(w: number, h: number, mode: Mode) {
   }
   if (mode !== 'arrange') return { x: 0, y: 0 }
   if (w >= 820) return { x: -219, y: 0 }
-  return { x: 0, y: Math.min(220, h * 0.25) }
+  return { x: 0, y: Math.min(240, h * 0.28) }
 }
 
 /** Frame the whole bouquet (paper peaks, flare and bow included). */

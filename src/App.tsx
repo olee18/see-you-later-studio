@@ -137,8 +137,11 @@ function Hero() {
         ))}
       </ol>
       <div className="hero-actions">
+        <button className="btn primary big" onClick={() => useUI.getState().set({ mode: 'arrange', tab: 'templates' })} tabIndex={mode === 'hero' ? 0 : -1}>
+          {t('startNow')} →
+        </button>
         <button
-          className="btn primary big"
+          className="btn ghost big"
           onClick={() => {
             useDesign.getState().arrangeFromScratch()
             useUI.getState().set({ mode: 'arrange', tab: 'flowers' })
@@ -146,9 +149,6 @@ function Hero() {
           tabIndex={mode === 'hero' ? 0 : -1}
         >
           {t('arrangeOwn')}
-        </button>
-        <button className="btn ghost big" onClick={() => useUI.getState().set({ mode: 'arrange', tab: 'templates' })} tabIndex={mode === 'hero' ? 0 : -1}>
-          {t('startReady')}
         </button>
       </div>
       <ContinueLink />

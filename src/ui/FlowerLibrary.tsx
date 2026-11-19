@@ -100,16 +100,6 @@ export function FlowerLibrary() {
   const { t } = useT()
   return (
     <div className="flower-lib">
-      <div className="howto">
-        <div>
-          <i>☝</i>
-          <span><b>{t('howTap')}</b> {t('howTapRest')}</span>
-        </div>
-        <div>
-          <i>✥</i>
-          <span><b>{t('howDrag')}</b> {t('howDragRest')}</span>
-        </div>
-      </div>
       <h3 className="lib-section">{t('secFlowers')}</h3>
       {flowers.map((t) => (
         <Row key={t} type={t} />

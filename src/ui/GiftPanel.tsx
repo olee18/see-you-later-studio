@@ -28,7 +28,6 @@ function Templates() {
   }
   return (
     <>
-      <p className="intro">{t('tplIntro')} <b>{t('tabFlowers')}</b>.</p>
       <h3 className="step-title">{t('size')}</h3>
       <div className="size-row compact" role="radiogroup" aria-label="Template size">
         {SIZES.map((s) => (
@@ -150,12 +149,28 @@ function SelectedFlower() {
   )
 }
 
+/** The guided flow: choose a bouquet → flowers → wrap & ribbon → photo. */
+const STEPS: { id: 'templates' | 'flowers' | 'paper' | 'photo'; short: StrKey; title: StrKey; hint: StrKey }[] = [
+  { id: 'templates', short: 'st1', title: 'st1Title', hint: 'st1Hint' },
+  { id: 'flowers', short: 'st2', title: 'st2Title', hint: 'st2Hint' },
+  { id: 'paper', short: 'st3', title: 'st3Title', hint: 'st3Hint' },
+  { id: 'photo', short: 'st4', title: 'st4Title', hint: 'st4Title' },
+]
+
 export function GiftPanel() {
   const design = useDesign((s) => s.design)
   const current = useDesign((s) => s.bouquets.find((b) => b.id === s.currentId))
   const { t, style, lang } = useT()
   const tab = useUI((s) => s.tab)
   const setTab = (t: typeof tab) => useUI.getState().set({ tab: t })
+  const at = STEPS.findIndex((s) => s.id === tab)
+  const go = (i: number) => {
+    const s = STEPS[i]
+    if (!s) return
+    if (s.id === 'photo') useUI.getState().set({ mode: 'photo', selected: null })
+    else setTab(s.id)
+  }
+  const step = STEPS[at]
   return (
     <aside className="panel gift-panel" aria-label={t('panelAria')}>
       <header className="panel-head">
@@ -167,12 +182,19 @@ export function GiftPanel() {
           </div>
         </div>
       </header>
-      <div className="tabs" role="tablist">
-        {([['flowers', t('tabFlowers')], ['templates', t('tabReady')], ['paper', t('tabPaper')]] as [typeof tab, string][]).map(([v, t]) => (
-          <button key={v} role="tab" aria-selected={tab === v} className={tab === v ? 'is-on' : ''} onClick={() => setTab(v)}>
-            {t}
-          </button>
+      <ol className="stepper" aria-label={t('stepsAria')}>
+        {STEPS.map((s, i) => (
+          <li key={s.id}>
+            <button className={`step ${i === at ? 'is-on' : ''} ${i < at ? 'is-done' : ''}`} onClick={() => go(i)} aria-current={i === at ? 'step' : undefined}>
+              <b>{i < at ? '✓' : i + 1}</b>
+              <span>{t(s.short)}</span>
+            </button>
+          </li>
         ))}
+      </ol>
+      <div className="step-head">
+        <h3>{t(step.title)}</h3>
+        <p>{t(step.hint)}</p>
       </div>
       <div className="gift-body">
         {tab === 'templates' && <Templates />}
@@ -180,6 +202,18 @@ export function GiftPanel() {
         {tab === 'paper' && <Paper />}
       </div>
       <SelectedFlower />
+      <footer className="step-foot">
+        {at > 0 ? (
+          <button className="btn ghost big" onClick={() => go(at - 1)}>
+            ← {t('back')}
+          </button>
+        ) : (
+          <span />
+        )}
+        <button className="btn primary big" onClick={() => go(at + 1)}>
+          {at === STEPS.length - 2 ? `📷 ${t('toPhoto')}` : `${t('next')} →`}
+        </button>
+      </footer>
     </aside>
   )
 }
