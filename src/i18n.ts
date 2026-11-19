@@ -30,7 +30,7 @@ const STR = {
   st3: ['Wrap', 'ห่อ', 'ຫໍ່'],
   st4: ['Photo', 'ถ่ายรูป', 'ຖ່າຍຮູບ'],
   st1Title: ['Choose a bouquet', 'เลือกแบบช่อ', 'ເລືອກແບບຊໍ່'],
-  st1Hint: ['Pick a size and a bouquet to start from.', 'เลือกขนาดและแบบช่อที่ชอบ', 'ເລືອກຂະໜາດ ແລະ ແບບຊໍ່ທີ່ມັກ'],
+  st1Hint: ['Start with an empty bouquet, or pick a ready-made one.', 'เริ่มจากช่อว่าง หรือเลือกช่อสำเร็จรูป', 'ເລີ່ມຈາກຊໍ່ຫວ່າງ ຫຼື ເລືອກຊໍ່ສຳເລັດຮູບ'],
   st2Title: ['Your flowers', 'ปรับดอกไม้', 'ປັບດອກໄມ້'],
   st2Hint: [
     'Tap a colour to add a flower. Tap a flower on the bouquet to change or remove it. You can skip this step.',
@@ -76,6 +76,7 @@ const STR = {
     'ບໍ່ມີເວລາ? ເລືອກຊໍ່ສຳເລັດຮູບ ແລ້ວປ່ຽນດອກໃດກໍໄດ້ໃນແຖບ',
   ],
   size: ['Size', 'ขนาด', 'ຂະໜາດ'],
+  orReady: ['or start from a ready-made bouquet', 'หรือเริ่มจากช่อสำเร็จรูป', 'ຫຼື ເລີ່ມຈາກຊໍ່ສຳເລັດຮູບ'],
   sizeHint: ['Then pick a bouquet below — it will be made in this size.', 'แล้วเลือกแบบช่อด้านล่าง — จะได้ช่อขนาดนี้', 'ແລ້ວເລືອກແບບຊໍ່ດ້ານລຸ່ມ — ຈະໄດ້ຊໍ່ຂະໜາດນີ້'],
   bouquets: ['Bouquets', 'แบบช่อ', 'ແບບຊໍ່'],
   startEmpty: ['Start empty', 'เริ่มจากช่อว่าง', 'ເລີ່ມຈາກຊໍ່ຫວ່າງ'],

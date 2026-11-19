@@ -206,8 +206,18 @@ b { font-weight: 600; }
 .style-card.is-on { border-color: var(--ink); background: #fff; }
 .style-name { font-family: var(--serif); font-weight: 500; font-size: 21px; line-height: 1.05; text-align: center; }
 .style-thai { font-size: 14px; color: var(--ink-soft); text-align: center; }
-.style-card.empty { border: 2px dashed rgba(47, 40, 38, 0.28); background: transparent; justify-content: center; }
-.empty-plus { display: grid; place-items: center; width: 96px; height: 96px; font-size: 44px; font-weight: 300; color: var(--sage-deep); }
+.style-card.empty {
+  width: 100%; margin: 4px 0 0; flex-direction: row; justify-content: flex-start; gap: 14px; padding: 14px 18px;
+  border: 2px dashed rgba(194, 96, 122, 0.45); background: rgba(194, 96, 122, 0.06);
+}
+.style-card.empty:hover { background: rgba(194, 96, 122, 0.1); }
+.style-card.empty .empty-text { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.style-card.empty .style-name, .style-card.empty .style-thai { text-align: left; }
+.style-card.empty .empty-text { flex: 1; }
+.empty-go { font-size: 22px; color: var(--rose); }
+.or-line { display: flex; align-items: center; gap: 10px; margin: 18px 2px 4px; font-size: 13px; font-weight: 600; color: var(--ink-soft); }
+.or-line::before, .or-line::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.empty-plus { display: grid; place-items: center; flex: none; width: 56px; height: 56px; border-radius: 50%; background: #fff; font-size: 34px; font-weight: 300; color: var(--rose); box-shadow: 0 2px 8px rgba(194, 96, 122, 0.2); }
 
 /* paper & ribbon */
 .wrap-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px 10px; }
@@ -351,7 +361,9 @@ b { font-weight: 600; }
   .steps li { font-size: 13px; padding: 4px 10px 4px 4px; }
   .steps b { width: 22px; height: 22px; font-size: 12px; }
   .topbar { padding: 14px 14px; }
-  .wordmark { font-size: 14px; letter-spacing: 0.18em; }
+  .wordmark { font-size: 12px; letter-spacing: 0.12em; }
+  .topbar { gap: 8px; }
+  .topbar .lang-switch button { min-width: 40px; padding: 0 8px; font-size: 14px; min-height: 36px; }
   .hero-actions .btn.big { flex: 1 1 100%; }
 
   .gift-panel { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; height: 58%; border-radius: 24px; }

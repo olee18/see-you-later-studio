@@ -28,6 +28,15 @@ function Templates() {
   }
   return (
     <>
+      <button className="style-card empty" onClick={() => { startEmpty(); useUI.getState().set({ tab: 'flowers' }) }}>
+        <span className="empty-plus">+</span>
+        <span className="empty-text">
+          <span className="style-name">{t('startEmpty')}</span>
+          <span className="style-thai">{t('startEmptySub')}</span>
+        </span>
+        <span className="empty-go" aria-hidden="true">→</span>
+      </button>
+      <div className="or-line"><span>{t('orReady')}</span></div>
       <h3 className="step-title">{t('size')}</h3>
       <div className="size-row compact" role="radiogroup" aria-label="Template size">
         {SIZES.map((s) => (
@@ -46,11 +55,6 @@ function Templates() {
             <span className="style-name">{style(s.id)}</span>
           </button>
         ))}
-        <button className="style-card empty" onClick={() => { startEmpty(); useUI.getState().set({ tab: 'flowers' }) }}>
-          <span className="empty-plus">+</span>
-          <span className="style-name">{t('startEmpty')}</span>
-          <span className="style-thai">{t('startEmptySub')}</span>
-        </button>
       </div>
     </>
   )
