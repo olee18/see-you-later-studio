@@ -11,7 +11,7 @@ import { giftFromStyle } from '../gift/styles'
 import { photoFrame, usePhoto, type PhotoAngle } from '../state/photo'
 import { useDesign, useUI } from '../state/store'
 import { GiftBouquet } from './GiftBouquet'
-import { bouquetLift } from '../gift/shapes'
+import { bouquetLift, boxRadius, type ShapeId } from '../gift/shapes'
 import { BENCH_ROOT, HERO_ROOT, stage } from './stage'
 import { Studio } from './Studio'
 
@@ -40,11 +40,19 @@ const ANGLES: Record<PhotoAngle, { elev: number; az: number; dist: number }> = {
   close: { elev: 20, az: -18, dist: 0.6 },
 }
 
-function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle = 'three', lift = 0) {
+/** Half-width of the whole bouquet for each shape (wrap flare, box, or just the flowers). */
+function halfWidth(shape: ShapeId, d: Dims) {
+  if (shape === 'handtied') return d.rimR * 1.06 + 0.06
+  if (shape === 'cone') return d.rimR * 1.12 + 0.08 + 0.1 * d.S
+  if (shape === 'box') return Math.max(boxRadius(d), d.rimR * 1.06) + 0.05
+  return d.rimR * 1.06 + 0.12 + 0.2 * d.S
+}
+
+function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle = 'three', lift = 0, shape: ShapeId = 'korean') {
   const narrow = w < h * 0.95
   const root = mode === 'hero' ? HERO_ROOT : BENCH_ROOT
   const H = dims.topY + 0.26 + lift
-  const W = 2 * (dims.rimR * 1.06 + 0.12 + 0.2 * dims.S)
+  const W = 2 * halfWidth(shape, dims)
   const t = Math.tan(((FOV / 2) * Math.PI) / 180)
   if (mode === 'photo') {
     // fit the bouquet inside the 4:5 photo frame
@@ -99,12 +107,12 @@ function CameraRig() {
 
   useLayoutEffect(() => {
     const c = controls.current
-    const shot = shotFor(mode, size.width, size.height, dims, angle, lift)
+    const shot = shotFor(mode, size.width, size.height, dims, angle, lift, mode === 'hero' ? HERO_DESIGN.shape : shape)
     const off = panelOffset(size.width, size.height, mode)
     const prev = last.current
-    last.current = { mode, S: dims.S + lift, angle }
+    last.current = { mode, S: dims.S + lift + halfWidth(shape, dims), angle }
     const modeChanged = !prev || prev.mode !== mode
-    const sizeChanged = !!prev && (Math.abs(prev.S - (dims.S + lift)) > 1e-4 || (mode === 'photo' && prev.angle !== angle))
+    const sizeChanged = !!prev && (Math.abs(prev.S - (dims.S + lift + halfWidth(shape, dims))) > 1e-4 || (mode === 'photo' && prev.angle !== angle))
     // the long arcing move is only for travelling between the two stations
     const travel = modeChanged && (prev?.mode === 'hero' || mode === 'hero')
 
@@ -150,7 +158,7 @@ function CameraRig() {
       useUI.getState().set({ cameraBusy: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, dims, size.width, size.height, angle, lift])
+  }, [mode, dims, size.width, size.height, angle, lift, shape])
 
   return (
     <OrbitControls

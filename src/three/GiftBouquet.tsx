@@ -12,6 +12,7 @@ import { useDesign, useUI } from '../state/store'
 import { accentMaterial, createPetalMaterial, setPetalColors } from './materials'
 import { slotAtScreen, stage } from './stage'
 import { Stand } from './Stands'
+import { standSeat } from '../gift/stands'
 
 const GREEN = { stem: '#5f7f4a', leaf: '#6b8f55' }
 const UP = new THREE.Vector3(0, 1, 0)
@@ -114,26 +115,41 @@ function FoliageBase({ dims, count }: { dims: Dims; count: number }) {
   return (
     <mesh position-y={dims.cy} receiveShadow>
       <sphereGeometry args={[dims.R * 0.93, 40, 16, 0, Math.PI * 2, 0, dims.cap * 0.98]} />
-      <meshStandardMaterial color="#3f5a34" roughness={0.9} side={THREE.DoubleSide} />
+      <meshStandardMaterial color="#3f5a34" roughness={0.9} side={THREE.FrontSide} />
     </mesh>
   )
 }
 
-function StemBatch({ heads, bindY, below = 0.13 }: { heads: Head[]; bindY: number; below?: number }) {
+/**
+ * Stems from the binding point up to each head. `lower` (hand-tied) adds the
+ * part below the tie: nearly straight down, only slightly splayed, ending at
+ * `bottom` so it stays inside the stand.
+ */
+function StemBatch({ heads, bindY, lower }: { heads: Head[]; bindY: number; lower?: { bottom: number } }) {
   const mesh = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({ color: GREEN.stem, roughness: 0.5 })
-    const m = new THREE.InstancedMesh(mainStemGeo(), mat, heads.length)
+    const m = new THREE.InstancedMesh(mainStemGeo(), mat, heads.length * (lower ? 2 : 1))
     const bind = new THREE.Vector3(0, bindY, 0)
+    const below = lower ? 0 : 0.13
+    const q = new THREE.Quaternion()
     heads.forEach((h, i) => {
       const d = h.pos.clone().sub(bind)
       const len = d.length()
-      const start = bind.clone().addScaledVector(d.normalize(), -below)
-      m.setMatrixAt(i, new THREE.Matrix4().compose(start, new THREE.Quaternion().setFromUnitVectors(UP, d), new THREE.Vector3(1, len + below, 1)))
+      d.normalize()
+      const start = bind.clone().addScaledVector(d, -below)
+      m.setMatrixAt(i, new THREE.Matrix4().compose(start, q.setFromUnitVectors(UP, d), new THREE.Vector3(1, len + below, 1)))
+      if (lower) {
+        // continue through the tie with ~20% of the splay, like a spiral hand-tie
+        const down = new THREE.Vector3(-d.x * 0.2, -1, -d.z * 0.2).normalize()
+        const l = Math.max(0.02, (bindY - lower.bottom) / -down.y)
+        const end = bind.clone().addScaledVector(down, l)
+        m.setMatrixAt(heads.length + i, new THREE.Matrix4().compose(end, q.setFromUnitVectors(UP, down.clone().negate()), new THREE.Vector3(1, l, 1)))
+      }
     })
     m.castShadow = true
     m.computeBoundingSphere()
     return m
-  }, [heads, bindY, below])
+  }, [heads, bindY, lower?.bottom])
   useEffect(() => () => { mesh.dispose(); (mesh.material as THREE.Material).dispose() }, [mesh])
   return <primitive object={mesh} />
 }
@@ -540,6 +556,9 @@ function PopFlower({ head, popKey }: { head: Head; popKey: number }) {
 export function GiftBouquet({ design, sway = true, animate = true, interactive = false }: { design: GiftDesign; sway?: boolean; animate?: boolean; interactive?: boolean }) {
   const { heads, dims } = useMemo(() => buildHeads(design.items), [design.items])
   const shape = design.shape
+  const lift = bouquetLift(shape, design.stand, dims)
+  // hand-tied: the tie sits just under the flowers, so only a little bare stem shows above the collar
+  const tied = useMemo(() => (shape === 'handtied' ? { ...dims, bindY: Math.max(dims.bindY, dims.rimY - 0.12) } : dims), [shape, dims])
   const pop = useUI((s) => (interactive ? s.pop : null))
   const popHead = pop && pop.index < heads.length ? heads[pop.index] : null
   const batched = useMemo(() => (popHead ? heads.filter((h) => h !== popHead) : heads), [heads, popHead])
@@ -571,13 +590,13 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
   return (
     <group ref={root}>
       {shape === 'box' ? <HatBox dims={dims} wrapId={design.wrap} ribbon={design.ribbon} /> : <Stand id={design.stand} />}
-      <group position-y={bouquetLift(shape, design.stand, dims)}>
+      <group position-y={lift}>
       {shape === 'korean' && <LayeredWrap dims={dims} wrapId={design.wrap} />}
       {shape === 'cone' && <ConeWrap dims={dims} wrapId={design.wrap} />}
-      {shape === 'handtied' && <CuffWrap dims={dims} wrapId={design.wrap} />}
+      {shape === 'handtied' && <CuffWrap dims={tied} wrapId={design.wrap} />}
       <group ref={flowers} position-y={dims.bindY}>
         <group position-y={-dims.bindY}>
-          <StemBatch heads={heads} bindY={dims.bindY} below={shape === 'handtied' ? 0.2 : 0.13} />
+          <StemBatch heads={heads} bindY={tied.bindY} lower={shape === 'handtied' ? { bottom: standSeat(design.stand) - lift } : undefined} />
           <FoliageBase dims={dims} count={heads.length} />
           <FlowerBatch heads={batched} />
           {popHead && pop && <PopFlower head={popHead} popKey={pop.key} />}
@@ -585,7 +604,7 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
           {interactive && <Markers heads={heads} />}
         </group>
       </group>
-      {shape !== 'box' && <RibbonBand dims={dims} color={design.ribbon} shape={shape} />}
+      {shape !== 'box' && <RibbonBand dims={tied} color={design.ribbon} shape={shape} />}
       </group>
     </group>
   )
