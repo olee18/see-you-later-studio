@@ -46,7 +46,7 @@ const STR = {
   surpriseTitle: ['Pick a random bouquet', 'สุ่มช่อดอกไม้ให้', 'ສຸ່ມຊໍ່ດອກໄມ້ໃຫ້'],
   tabFlowers: ['Arrange flowers', 'จัดดอกไม้', 'ຈັດດອກໄມ້'],
   tabReady: ['Ready-made', 'ช่อสำเร็จรูป', 'ຊໍ່ສຳເລັດຮູບ'],
-  tabPaper: ['Paper & Bow', 'กระดาษ & โบว์', 'ເຈ້ຍ & ໂບ'],
+  tabPaper: ['Decorate', 'ตกแต่ง', 'ຕົກແຕ່ງ'],
   // templates
   tplIntro: [
     'Short on time? Pick a ready-made bouquet, then change any flower in',
@@ -96,6 +96,13 @@ const STR = {
     'ເກັບໄດ້ສູງສຸດ {n} ຊໍ່ — ລຶບຊໍ່ເກົ່າອອກກ່ອນເດີ້',
   ],
   bouquetFull: ['The bouquet is full — {n} flowers max.', 'ช่อเต็มแล้ว — สูงสุด {n} ดอก', 'ຊໍ່ເຕັມແລ້ວ — ສູງສຸດ {n} ດອກ'],
+  // stands
+  stand: ['Bouquet stand', 'ขาตั้งช่อ', 'ຂາຕັ້ງຊໍ່'],
+  stand_gold: ['Gold stand', 'ขาตั้งสีทอง', 'ຂາຕັ້ງສີຄຳ'],
+  stand_ceramic: ['Ceramic cup', 'ถ้วยเซรามิก', 'ຖ້ວຍເຊລາມິກ'],
+  stand_glass: ['Glass vase', 'แจกันแก้ว', 'ແຈກັນແກ້ວ'],
+  stand_basket: ['Rattan basket', 'ตะกร้าหวาย', 'ກະຕ່າຫວາຍ'],
+  stand_box: ['Wooden box', 'กล่องไม้', 'ກ່ອງໄມ້'],
   // photo mode
   photo: ['Photo', 'ถ่ายรูป', 'ຖ່າຍຮູບ'],
   photoMode: ['Photo mode', 'โหมดถ่ายรูป', 'ໂໝດຖ່າຍຮູບ'],

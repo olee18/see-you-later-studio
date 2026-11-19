@@ -14,6 +14,8 @@ export const stage = {
   controls: null as OrbitControlsImpl | null,
   /** one-shot: called with the WebGL canvas right after the next frame is drawn */
   capture: null as ((canvas: HTMLCanvasElement) => void) | null,
+  /** how far the bench bouquet is raised by its stand */
+  lift: 0,
 }
 
 const _v = new THREE.Vector3()
@@ -30,7 +32,9 @@ export function slotAtScreen(clientX: number, clientY: number, count: number, ma
   let best: number | null = null
   let bestD = maxPx * maxPx
   for (let k = 0; k < count; k++) {
-    _v.copy(slotPos(k, count)).add(BENCH_ROOT).project(camera)
+    _v.copy(slotPos(k, count)).add(BENCH_ROOT)
+    _v.y += stage.lift
+    _v.project(camera)
     if (_v.z > 1) continue
     const x = rect.left + ((_v.x + 1) / 2) * rect.width
     const y = rect.top + ((1 - _v.y) / 2) * rect.height

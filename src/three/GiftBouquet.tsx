@@ -10,6 +10,7 @@ import { mainStemGeo } from './geometry'
 import { useDesign, useUI } from '../state/store'
 import { accentMaterial, createPetalMaterial, setPetalColors } from './materials'
 import { slotAtScreen, stage } from './stage'
+import { Stand, standLift } from './Stands'
 
 const GREEN = { stem: '#5f7f4a', leaf: '#6b8f55' }
 const UP = new THREE.Vector3(0, 1, 0)
@@ -292,20 +293,6 @@ function RibbonBand({ dims, color }: { dims: Dims; color: string }) {
   )
 }
 
-function Holder() {
-  const geo = useMemo(() => {
-    const pts = [[0.0, -0.06], [0.085, -0.06], [0.09, -0.05], [0.082, 0.0], [0.092, 0.085], [0.1, 0.098], [0.094, 0.102], [0.084, 0.094], [0.0, 0.05]].map(
-      ([x, y]) => new THREE.Vector2(x, y),
-    )
-    return new THREE.LatheGeometry(pts, 48)
-  }, [])
-  return (
-    <mesh geometry={geo} castShadow receiveShadow>
-      <meshPhysicalMaterial color="#efe7de" roughness={0.3} clearcoat={0.6} clearcoatRoughness={0.3} />
-    </mesh>
-  )
-}
-
 // ---------------------------------------------------------------- interaction
 
 const invisible = new THREE.MeshBasicMaterial({ visible: false })
@@ -470,7 +457,8 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
 
   return (
     <group ref={root}>
-      <Holder />
+      <Stand id={design.stand} />
+      <group position-y={standLift(design.stand)}>
       <LayeredWrap dims={dims} wrapId={design.wrap} />
       <group ref={flowers} position-y={dims.bindY}>
         <group position-y={-dims.bindY}>
@@ -483,6 +471,7 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
         </group>
       </group>
       <RibbonBand dims={dims} color={design.ribbon} />
+      </group>
     </group>
   )
 }

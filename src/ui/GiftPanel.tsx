@@ -4,6 +4,9 @@ import { RIBBONS, SIZES, STYLES, WRAPS, type SizeId } from '../gift/styles'
 import { bouquetLabel, useT } from '../i18n'
 import { useDesign, useUI } from '../state/store'
 import { BouquetThumb } from './BouquetThumb'
+import { StandIcon } from './StandIcon'
+import { STANDS } from '../gift/stands'
+import type { StrKey } from '../i18n'
 import { FlowerLibrary } from './FlowerLibrary'
 
 
@@ -45,10 +48,20 @@ function Templates() {
 function Paper() {
   const wrap = useDesign((s) => s.design.wrap)
   const ribbon = useDesign((s) => s.design.ribbon)
+  const stand = useDesign((s) => s.design.stand)
   const { update } = useDesign.getState()
   const { t, color } = useT()
   return (
     <>
+      <h3 className="step-title">{t('stand')}</h3>
+      <div className="stand-row" role="radiogroup" aria-label={t('stand')}>
+        {STANDS.map((s) => (
+          <button key={s.id} role="radio" aria-checked={s.id === stand} className={`stand-chip ${s.id === stand ? 'is-on' : ''}`} onClick={() => update({ stand: s.id })}>
+            <StandIcon id={s.id} size={52} />
+            <span className="wrap-name">{t(`stand_${s.id}` as StrKey)}</span>
+          </button>
+        ))}
+      </div>
       <h3 className="step-title">{t('wrapping')}</h3>
       <div className="wrap-row" role="radiogroup" aria-label={t('wrapping')}>
         {WRAPS.map((w) => (

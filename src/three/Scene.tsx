@@ -11,6 +11,7 @@ import { giftFromStyle } from '../gift/styles'
 import { photoFrame, usePhoto, type PhotoAngle } from '../state/photo'
 import { useDesign, useUI } from '../state/store'
 import { GiftBouquet } from './GiftBouquet'
+import { standLift } from './Stands'
 import { BENCH_ROOT, HERO_ROOT, stage } from './stage'
 import { Studio } from './Studio'
 
@@ -39,10 +40,10 @@ const ANGLES: Record<PhotoAngle, { elev: number; az: number; dist: number }> = {
   close: { elev: 20, az: -18, dist: 0.6 },
 }
 
-function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle = 'three') {
+function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle = 'three', lift = 0) {
   const narrow = w < h * 0.95
   const root = mode === 'hero' ? HERO_ROOT : BENCH_ROOT
-  const H = dims.topY + 0.26
+  const H = dims.topY + 0.26 + lift
   const W = 2 * (dims.rimR * 1.06 + 0.12 + 0.2 * dims.S)
   const t = Math.tan(((FOV / 2) * Math.PI) / 180)
   if (mode === 'photo') {
@@ -52,7 +53,7 @@ function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle
     const d = Math.max(((H / 2) * 1.3 * h) / (t * f.h), ((W / 2) * 1.18 * h) / (t * f.w)) * a.dist
     const elev = (a.elev * Math.PI) / 180
     const az = (a.az * Math.PI) / 180
-    const target = root.clone().add(new THREE.Vector3(0, angle === 'close' ? dims.topY * 0.78 : H * (angle === 'top' ? 0.5 : 0.4), 0))
+    const target = root.clone().add(new THREE.Vector3(0, angle === 'close' ? lift + dims.topY * 0.78 : H * (angle === 'top' ? 0.5 : 0.4), 0))
     const pos = target.clone().add(new THREE.Vector3(Math.sin(az) * Math.cos(elev) * d, Math.sin(elev) * d, Math.cos(az) * Math.cos(elev) * d))
     return { pos, target }
   }
@@ -73,6 +74,8 @@ function CameraRig() {
   // re-frame only when the bouquet grows/shrinks noticeably (not on every flower)
   const bucket = useDesign((s) => Math.round(s.design.items.length / 6))
   const angle = usePhoto((s) => s.angle)
+  const benchLift = useDesign((s) => standLift(s.design.stand))
+  const lift = mode === 'hero' ? standLift(HERO_DESIGN.stand) : benchLift
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const size = useThree((s) => s.size)
   const controls = useRef<OrbitControlsImpl>(null!)
@@ -95,12 +98,12 @@ function CameraRig() {
 
   useLayoutEffect(() => {
     const c = controls.current
-    const shot = shotFor(mode, size.width, size.height, dims, angle)
+    const shot = shotFor(mode, size.width, size.height, dims, angle, lift)
     const off = panelOffset(size.width, size.height, mode)
     const prev = last.current
-    last.current = { mode, S: dims.S, angle }
+    last.current = { mode, S: dims.S + lift, angle }
     const modeChanged = !prev || prev.mode !== mode
-    const sizeChanged = !!prev && (Math.abs(prev.S - dims.S) > 1e-4 || (mode === 'photo' && prev.angle !== angle))
+    const sizeChanged = !!prev && (Math.abs(prev.S - (dims.S + lift)) > 1e-4 || (mode === 'photo' && prev.angle !== angle))
     // the long arcing move is only for travelling between the two stations
     const travel = modeChanged && (prev?.mode === 'hero' || mode === 'hero')
 
@@ -146,7 +149,7 @@ function CameraRig() {
       useUI.getState().set({ cameraBusy: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, dims, size.width, size.height, angle])
+  }, [mode, dims, size.width, size.height, angle, lift])
 
   return (
     <OrbitControls
@@ -207,6 +210,9 @@ function HeroStation() {
 
 function BenchStation() {
   const design = useDesign((s) => s.design)
+  useEffect(() => {
+    stage.lift = standLift(design.stand)
+  }, [design.stand])
   const reduced = useUI((s) => s.reducedMotion)
   return (
     <group position={BENCH_ROOT}>

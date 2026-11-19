@@ -34,7 +34,7 @@ interface DesignState {
   /** open an empty bouquet to arrange from scratch (reuses the current one if it is empty) */
   arrangeFromScratch: () => void
   // paper / ribbon / card
-  update: (patch: Partial<Pick<GiftDesign, 'wrap' | 'ribbon' | 'card'>>) => void
+  update: (patch: Partial<Pick<GiftDesign, 'wrap' | 'ribbon' | 'stand' | 'card'>>) => void
   // starting points
   applyTemplate: (styleId: string, size?: SizeId) => void
   startEmpty: () => void
@@ -96,7 +96,8 @@ export const useDesign = create<DesignState>()(
         set({ bouquets: list, currentId: b.id, design: b.design, past: [], future: [] })
         useUI.getState().set({ selected: null, pop: null })
       }
-      const keepCard = (d: GiftDesign) => ({ ...d, card: get().design.card })
+      // templates / surprise change the flowers, paper and bow; the message and the stand stay
+      const keepCard = (d: GiftDesign) => ({ ...d, card: get().design.card, stand: get().design.stand })
       return {
         design: initial.design,
         currentId: initial.id,
@@ -135,7 +136,7 @@ export const useDesign = create<DesignState>()(
         startEmpty: () => {
           useUI.getState().set({ selected: null })
           const d = get().design
-          commit({ ...emptyGift(), wrap: d.wrap, ribbon: d.ribbon, card: d.card })
+          commit({ ...emptyGift(), wrap: d.wrap, ribbon: d.ribbon, stand: d.stand, card: d.card })
         },
         surprise: () => {
           useUI.getState().set({ selected: null })

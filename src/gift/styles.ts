@@ -1,3 +1,4 @@
+import { DEFAULT_STAND, isStand, type StandId } from './stands'
 import { FLOWERS, FLOWER_TYPES, mulberry32, type FlowerType, type StemColors } from '../data/flowers'
 import { MAX_ITEMS, dimsFor, slotPos, type Item } from './layout'
 
@@ -35,6 +36,8 @@ export interface GiftDesign {
   items: Item[]
   wrap: string
   ribbon: string
+  /** what the bouquet stands in */
+  stand: StandId
   /** template it was started from (for naming) */
   style: string | null
   card: { text: string }
@@ -212,10 +215,10 @@ export function templateItems(styleId: string, size: SizeId): Item[] {
 
 export function giftFromStyle(styleId: string, size?: SizeId): GiftDesign {
   const s = styleById(styleId) ?? STYLES[0]
-  return { v: 3, items: templateItems(s.id, size ?? s.defaultSize ?? 'M'), wrap: s.wrap, ribbon: s.ribbon, style: s.id, card: { text: '' } }
+  return { v: 3, items: templateItems(s.id, size ?? s.defaultSize ?? 'M'), wrap: s.wrap, ribbon: s.ribbon, stand: DEFAULT_STAND, style: s.id, card: { text: '' } }
 }
 
-export const emptyGift = (): GiftDesign => ({ v: 3, items: [], wrap: 'pearl', ribbon: '#f2a7b8', style: null, card: { text: '' } })
+export const emptyGift = (): GiftDesign => ({ v: 3, items: [], wrap: 'pearl', ribbon: '#f2a7b8', stand: DEFAULT_STAND, style: null, card: { text: '' } })
 export const defaultGift = () => giftFromStyle('sweet-pink', 'M')
 
 export function randomGift(): GiftDesign {
@@ -234,7 +237,7 @@ export function sanitizeGift(raw: unknown): GiftDesign {
   const r = raw as Partial<GiftDesign> & { size?: SizeId }
   if ((raw as { v?: unknown }).v === 2 && typeof r.style === 'string') {
     const g = giftFromStyle(r.style, SIZES.some((s) => s.id === r.size) ? r.size : undefined)
-    return { ...g, wrap: WRAPS.some((w) => w.id === r.wrap) ? (r.wrap as string) : g.wrap, ribbon: isHex(r.ribbon) ? r.ribbon : g.ribbon }
+    return { ...g, wrap: WRAPS.some((w) => w.id === r.wrap) ? (r.wrap as string) : g.wrap, ribbon: isHex(r.ribbon) ? r.ribbon : g.ribbon, stand: isStand(r.stand) ? r.stand : DEFAULT_STAND }
   }
   const items: Item[] = []
   for (const it of Array.isArray(r.items) ? r.items : []) {
@@ -257,6 +260,7 @@ export function sanitizeGift(raw: unknown): GiftDesign {
     items,
     wrap: WRAPS.some((w) => w.id === r.wrap) ? (r.wrap as string) : 'pearl',
     ribbon: isHex(r.ribbon) ? r.ribbon : '#f2a7b8',
+    stand: isStand(r.stand) ? r.stand : DEFAULT_STAND,
     style: typeof r.style === 'string' && styleById(r.style) ? r.style : null,
     card: { text: typeof r.card?.text === 'string' ? r.card.text.slice(0, 140) : '' },
   }
