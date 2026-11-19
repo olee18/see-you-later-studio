@@ -55,6 +55,7 @@ const STR = {
     'ບໍ່ມີເວລາ? ເລືອກຊໍ່ສຳເລັດຮູບ ແລ້ວປ່ຽນດອກໃດກໍໄດ້ໃນແຖບ',
   ],
   size: ['Size', 'ขนาด', 'ຂະໜາດ'],
+  sizeHint: ['Then pick a bouquet below — it will be made in this size.', 'แล้วเลือกแบบช่อด้านล่าง — จะได้ช่อขนาดนี้', 'ແລ້ວເລືອກແບບຊໍ່ດ້ານລຸ່ມ — ຈະໄດ້ຊໍ່ຂະໜາດນີ້'],
   bouquets: ['Bouquets', 'แบบช่อ', 'ແບບຊໍ່'],
   startEmpty: ['Start empty', 'เริ่มจากช่อว่าง', 'ເລີ່ມຈາກຊໍ່ຫວ່າງ'],
   startEmptySub: ['Arrange from scratch', 'จัดเองตั้งแต่เริ่ม', 'ຈັດເອງຕັ້ງແຕ່ເລີ່ມ'],

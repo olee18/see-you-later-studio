@@ -12,23 +12,33 @@ import type { StrKey } from '../i18n'
 import { FlowerLibrary } from './FlowerLibrary'
 
 
+/** Size whose flower count is closest to n. */
+const nearestSize = (n: number) => SIZES.reduce((a, b) => (Math.abs(b.heads - n) < Math.abs(a.heads - n) ? b : a)).id
+
 function Templates() {
   const design = useDesign((s) => s.design)
   const { applyTemplate, startEmpty } = useDesign.getState()
-  const [size, setSize] = useState<SizeId>('M')
+  // a ready-made bouquet shows its own size; a self-arranged one remembers the size picked for the next template
+  const [picked, setPicked] = useState<SizeId>('M')
+  const size = design.style ? nearestSize(design.items.length) : picked
   const { t, style } = useT()
+  const chooseSize = (id: SizeId) => {
+    setPicked(id)
+    if (design.style) applyTemplate(design.style, id)
+  }
   return (
     <>
       <p className="intro">{t('tplIntro')} <b>{t('tabFlowers')}</b>.</p>
       <h3 className="step-title">{t('size')}</h3>
       <div className="size-row compact" role="radiogroup" aria-label="Template size">
         {SIZES.map((s) => (
-          <button key={s.id} role="radio" aria-checked={s.id === size} className={`size-chip ${s.id === size ? 'is-on' : ''}`} onClick={() => setSize(s.id)}>
+          <button key={s.id} role="radio" aria-checked={s.id === size} className={`size-chip ${s.id === size ? 'is-on' : ''}`} onClick={() => chooseSize(s.id)}>
             <strong>{s.id}</strong>
             <span>{t('nFlowers', { n: s.heads })}</span>
           </button>
         ))}
       </div>
+      {!design.style && <p className="muted size-hint">{t('sizeHint')}</p>}
       <h3 className="step-title">{t('bouquets')}</h3>
       <div className="style-grid" role="list">
         {STYLES.map((s) => (

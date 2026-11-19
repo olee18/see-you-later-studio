@@ -179,6 +179,7 @@ b { font-weight: 600; }
 }
 .size-chip strong { font-family: var(--serif); font-weight: 500; font-size: 26px; line-height: 1; color: var(--ink); }
 .size-chip.is-on { border-color: var(--ink); background: #fff; }
+.size-hint { font-size: 14px; margin: 8px 2px 0; }
 .style-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
 .style-card {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px 14px; cursor: pointer;
