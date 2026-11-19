@@ -102,7 +102,33 @@ function LangCycle() {
 
 export const BRAND = 'SEE YOU LATER · STUDIO'
 
-/** Start-screen top bar: wordmark + language. */
+const swatchBg = (sw: [string, string, string]) => `conic-gradient(${sw[0]} 0 50%, ${sw[1]} 50% 75%, ${sw[2]} 75%)`
+
+/** Three round swatches to switch the room straight from the start screen. */
+function RoomSwatches({ tabbable }: { tabbable: boolean }) {
+  const { t } = useT()
+  const room = useRoom((s) => s.room)
+  return (
+    <div className="room-swatches" role="radiogroup" aria-label={t('room')}>
+      <span className="rs-label">{t('room')}</span>
+      {ROOMS.map((r) => (
+        <button
+          key={r.id}
+          role="radio"
+          aria-checked={r.id === room}
+          aria-label={t(`room_${r.id}` as StrKey)}
+          title={t(`room_${r.id}` as StrKey)}
+          className={`rs ${r.id === room ? 'is-on' : ''}`}
+          style={{ background: swatchBg(r.swatch) }}
+          onClick={() => useRoom.getState().setRoom(r.id)}
+          tabIndex={tabbable ? 0 : -1}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Start-screen top bar: wordmark, room and language. */
 function TopBar() {
   const mode = useUI((s) => s.mode)
   return (
@@ -110,7 +136,10 @@ function TopBar() {
       <span className="wordmark">
         SEE YOU LATER <i>·</i> STUDIO
       </span>
-      <LangSwitch tabbable={mode === 'hero'} />
+      <div className="topbar-right">
+        <RoomSwatches tabbable={mode === 'hero'} />
+        <LangSwitch tabbable={mode === 'hero'} />
+      </div>
     </header>
   )
 }
@@ -187,8 +216,6 @@ function EmptyHint() {
     </div>
   )
 }
-
-const swatchBg = (sw: [string, string, string]) => `conic-gradient(${sw[0]} 0 50%, ${sw[1]} 50% 75%, ${sw[2]} 75%)`
 
 /** Toolbar button + small menu to switch the room/table while arranging. */
 function RoomMenu() {

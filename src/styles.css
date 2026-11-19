@@ -41,6 +41,7 @@ b { font-weight: 600; }
 .brand {
   position: absolute; top: 22px; left: 28px;
   font-family: var(--serif); font-size: 18px; letter-spacing: 0.24em; text-transform: uppercase; white-space: nowrap;
+  padding: 6px 16px; border-radius: 999px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
   pointer-events: none; transition: opacity 0.6s var(--ease);
 }
 .mode-hero .brand { opacity: 0; }
@@ -105,9 +106,15 @@ b { font-weight: 600; }
   transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
 }
 .topbar.is-on { opacity: 1; pointer-events: auto; transform: none; }
-.wordmark { font-family: var(--serif); font-size: 20px; font-weight: 500; letter-spacing: 0.26em; white-space: nowrap; }
+.wordmark { font-family: var(--serif); font-size: 18px; font-weight: 500; letter-spacing: 0.24em; white-space: nowrap; padding: 8px 18px; border-radius: 999px; background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
 .wordmark i, .brand i { font-style: normal; color: var(--rose); }
 .topbar .lang-switch { background: rgba(255, 255, 255, 0.7); }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.room-swatches { display: flex; align-items: center; gap: 6px; padding: 5px 8px 5px 14px; border-radius: 999px; background: rgba(255, 255, 255, 0.7); }
+.rs-label { font-size: 13px; font-weight: 600; color: var(--ink-soft); margin-right: 2px; }
+.rs { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #fff; cursor: pointer; padding: 0; box-shadow: 0 1px 4px rgba(47, 40, 38, 0.25); transition: transform 0.2s var(--ease), box-shadow 0.2s; }
+.rs:hover { transform: scale(1.08); }
+.rs.is-on { box-shadow: 0 0 0 2.5px var(--ink); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 
 /* ---------------------------------------------------------------- studio */
@@ -365,7 +372,11 @@ b { font-weight: 600; }
   .steps li { font-size: 13px; padding: 4px 10px 4px 4px; }
   .steps b { width: 22px; height: 22px; font-size: 12px; }
   .topbar { padding: 14px 14px; }
-  .wordmark { font-size: 12px; letter-spacing: 0.12em; }
+  .wordmark { display: none; }
+  .topbar-right { width: 100%; justify-content: space-between; }
+  .rs-label { display: none; }
+  .room-swatches { padding: 4px 6px; }
+  .rs { width: 30px; height: 30px; }
   .topbar { gap: 8px; }
   .topbar .lang-switch button { min-width: 40px; padding: 0 8px; font-size: 14px; min-height: 36px; }
   .hero-actions .btn.big { flex: 1 1 100%; }
