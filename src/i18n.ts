@@ -104,17 +104,7 @@ const STR = {
   shape_korean: ['Korean wrap', 'ห่อสไตล์เกาหลี', 'ຫໍ່ແບບເກົາຫຼີ'],
   shape_cone: ['Tall cone', 'ทรงกรวยสูง', 'ຊົງກວຍສູງ'],
   shape_handtied: ['Hand-tied', 'ช่อมัดมือ', 'ຊໍ່ມັດມື'],
-  shape_box: ['Hat box', 'กล่องดอกไม้', 'ກ່ອງດອກໄມ້'],
   shape_posy: ['Round posy', 'ช่อกลมขอบลูกไม้', 'ຊໍ່ມົນຂອບລູກໄມ້'],
-  shape_heartbox: ['Heart box', 'กล่องหัวใจ', 'ກ່ອງຫົວໃຈ'],
-  shape_bag: ['Flower bag', 'ถุงดอกไม้', 'ຖົງດອກໄມ້'],
-  shape_bucket: ['Bucket', 'ถังดอกไม้', 'ຖັງດອກໄມ້'],
-  boxNoStand: [
-    'This shape sits right on the table — no stand needed.',
-    'รูปทรงนี้วางบนโต๊ะได้เลย ไม่ต้องใช้ขาตั้ง',
-    'ຮູບຊົງນີ້ວາງເທິງໂຕະໄດ້ເລີຍ ບໍ່ຕ້ອງໃຊ້ຂາຕັ້ງ',
-  ],
-  boxColour: ['Colour', 'สี', 'ສີ'],
   // occasions (ready-made filter)
   occ_all: ['All', 'ทั้งหมด', 'ທັງໝົດ'],
   occ_love: ['Love', 'ความรัก', 'ຄວາມຮັກ'],

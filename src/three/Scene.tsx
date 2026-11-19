@@ -11,7 +11,7 @@ import { giftFromStyle } from '../gift/styles'
 import { photoFrame, usePhoto, type PhotoAngle } from '../state/photo'
 import { useDesign, useUI } from '../state/store'
 import { GiftBouquet } from './GiftBouquet'
-import { bagSize, bouquetLift, boxRadius, bucketRadius, heartWidth, isContainer, type ShapeId } from '../gift/shapes'
+import { bouquetLift, type ShapeId } from '../gift/shapes'
 import { BENCH_ROOT, HERO_ROOT, stage } from './stage'
 import { Studio } from './Studio'
 
@@ -44,20 +44,14 @@ const ANGLES: Record<PhotoAngle, { elev: number; az: number; dist: number }> = {
 function halfWidth(shape: ShapeId, d: Dims) {
   if (shape === 'handtied') return d.rimR * 1.06 + 0.06
   if (shape === 'cone') return d.rimR * 1.12 + 0.08 + 0.1 * d.S
-  if (shape === 'box') return Math.max(boxRadius(d), d.rimR * 1.06) + 0.05
   if (shape === 'posy') return d.rimR * 1.3 + 0.06
-  if (shape === 'heartbox') return Math.max(heartWidth(d) / 2, d.rimR * 1.06) + 0.04
-  if (shape === 'bag') return Math.max(bagSize(d).w / 2, d.rimR * 1.06) + 0.05
-  if (shape === 'bucket') return Math.max(bucketRadius(d), d.rimR * 1.06) + 0.05
   return d.rimR * 1.06 + 0.12 + 0.2 * d.S
 }
 
 function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle = 'three', lift = 0, shape: ShapeId = 'korean') {
   const narrow = w < h * 0.95
   const root = mode === 'hero' ? HERO_ROOT : BENCH_ROOT
-  // containers have no paper peaking above the flowers: frame table-to-top instead
-  const box = isContainer(shape)
-  const H = box ? dims.topY + lift + 0.06 + 0.14 : dims.topY + 0.26 + lift
+  const H = dims.topY + 0.26 + lift
   const W = 2 * halfWidth(shape, dims)
   const t = Math.tan(((FOV / 2) * Math.PI) / 180)
   if (mode === 'photo') {
@@ -67,7 +61,7 @@ function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle
     const d = Math.max(((H / 2) * 1.3 * h) / (t * f.h), ((W / 2) * 1.18 * h) / (t * f.w)) * a.dist
     const elev = (a.elev * Math.PI) / 180
     const az = (a.az * Math.PI) / 180
-    const target = root.clone().add(new THREE.Vector3(0, angle === 'close' ? lift + dims.topY * 0.78 : box ? -0.06 + H * 0.42 : H * (angle === 'top' ? 0.5 : 0.4), 0))
+    const target = root.clone().add(new THREE.Vector3(0, angle === 'close' ? lift + dims.topY * 0.78 : H * (angle === 'top' ? 0.5 : 0.4), 0))
     const pos = target.clone().add(new THREE.Vector3(Math.sin(az) * Math.cos(elev) * d, Math.sin(elev) * d, Math.cos(az) * Math.cos(elev) * d))
     return { pos, target }
   }
@@ -77,7 +71,7 @@ function shotFor(mode: Mode, w: number, h: number, dims: Dims, angle: PhotoAngle
   let d = Math.max(((H / 2) * 1.22 * fit) / t, ((W / 2) * 1.18 * fit) / (t * aspect))
   if (mode === 'arrange' && narrow) d *= 1.4
   const elev = (mode === 'hero' ? 22 : 30) * (Math.PI / 180)
-  const target = root.clone().add(new THREE.Vector3(0, box ? -0.06 + H * 0.46 : H * (mode === 'arrange' ? 0.42 : 0.46), 0))
+  const target = root.clone().add(new THREE.Vector3(0, H * (mode === 'arrange' ? 0.42 : 0.46), 0))
   if (mode === 'hero' && !narrow) target.x -= d * 0.2
   if (mode === 'hero' && narrow) target.y -= H * 0.32
   const pos = target.clone().add(new THREE.Vector3(mode === 'hero' ? d * 0.12 : 0, Math.sin(elev) * d, Math.cos(elev) * d))

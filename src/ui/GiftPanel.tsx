@@ -6,7 +6,7 @@ import { useDesign, useUI } from '../state/store'
 import { BouquetThumb } from './BouquetThumb'
 import { StandIcon } from './StandIcon'
 import { ShapeIcon } from './ShapeIcon'
-import { SHAPES, isContainer } from '../gift/shapes'
+import { SHAPES } from '../gift/shapes'
 import { STANDS } from '../gift/stands'
 import type { StrKey } from '../i18n'
 import { FlowerLibrary } from './FlowerLibrary'
@@ -75,9 +75,6 @@ function Paper() {
         ))}
       </div>
       <h3 className="step-title">{t('stand')}</h3>
-      {isContainer(shape) ? (
-        <p className="muted box-note">{t('boxNoStand')}</p>
-      ) : (
       <div className="stand-row" role="radiogroup" aria-label={t('stand')}>
         {STANDS.map((s) => (
           <button key={s.id} role="radio" aria-checked={s.id === stand} className={`stand-chip ${s.id === stand ? 'is-on' : ''}`} onClick={() => update({ stand: s.id })}>
@@ -86,8 +83,7 @@ function Paper() {
           </button>
         ))}
       </div>
-      )}
-      <h3 className="step-title">{isContainer(shape) ? t('boxColour') : t('wrapping')}</h3>
+      <h3 className="step-title">{t('wrapping')}</h3>
       <div className="wrap-row" role="radiogroup" aria-label={t('wrapping')}>
         {WRAPS.map((w) => (
           <button key={w.id} role="radio" aria-checked={w.id === wrap} className={`wrap-chip ${w.id === wrap ? 'is-on' : ''}`} onClick={() => update({ wrap: w.id })} title={color(w.name)}>

@@ -201,7 +201,6 @@ b { font-weight: 600; }
 .stand-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .shape-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .shape-row .wrap-name { font-size: 13px; text-align: center; line-height: 1.25; }
-.box-note { font-size: 15px; padding: 10px 14px; border-radius: 14px; background: rgba(255, 255, 255, 0.6); }
 .stand-chip {
   display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 4px 10px; cursor: pointer;
   border: 2px solid transparent; border-radius: 18px; background: rgba(255, 255, 255, 0.75);

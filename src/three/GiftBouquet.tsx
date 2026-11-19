@@ -6,7 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { FLOWERS, mulberry32, type Part, type StemColors } from '../data/flowers'
 import { buildHeads, headRadius, quatFromDir, slotDir, slotPos, type Dims, type Head } from '../gift/layout'
 import { wrapById, type GiftDesign } from '../gift/styles'
-import { BOX_TOP, bagSize, bouquetLift, boxRadius, bucketRadius, containerTop, heartWidth, isContainer, type ShapeId } from '../gift/shapes'
+import { bouquetLift, type ShapeId } from '../gift/shapes'
 import { mainStemGeo } from './geometry'
 import { useDesign, useUI } from '../state/store'
 import { accentMaterial, createPetalMaterial, setPetalColors } from './materials'
@@ -303,47 +303,6 @@ function CuffWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
   )
 }
 
-/** Round hat box (outer = paper colour, lining = inner colour) with a ribbon and bow. Sits on the table. */
-function HatBox({ dims, wrapId, ribbon }: { dims: Dims; wrapId: string; ribbon: string }) {
-  const wrap = wrapById(wrapId)
-  const r = boxRadius(dims)
-  const h = BOX_TOP + 0.06
-  const y = -0.06 + h / 2
-  return (
-    <group>
-      <mesh position-y={y} castShadow receiveShadow>
-        <cylinderGeometry args={[r, r, h, 72, 1, true]} />
-        <meshPhysicalMaterial color={wrap.outer} roughness={0.45} clearcoat={0.35} clearcoatRoughness={0.4} side={THREE.FrontSide} />
-      </mesh>
-      <mesh position-y={y}>
-        <cylinderGeometry args={[r - 0.004, r - 0.004, h, 72, 1, true]} />
-        <meshStandardMaterial color={wrap.inner} roughness={0.8} side={THREE.BackSide} />
-      </mesh>
-      <mesh position-y={BOX_TOP} rotation-x={Math.PI / 2} castShadow>
-        <torusGeometry args={[r - 0.002, 0.004, 8, 72]} />
-        <meshStandardMaterial color={wrap.inner} roughness={0.6} />
-      </mesh>
-      <mesh position-y={-0.058} receiveShadow>
-        <cylinderGeometry args={[r, r, 0.004, 72]} />
-        <meshStandardMaterial color={wrap.outer} roughness={0.6} />
-      </mesh>
-      {/* floral foam / moss just under the flowers */}
-      <mesh position-y={BOX_TOP - 0.012}>
-        <cylinderGeometry args={[r - 0.006, r - 0.006, 0.01, 64]} />
-        <meshStandardMaterial color="#2f4127" roughness={1} />
-      </mesh>
-      {/* ribbon around the box + bow at the front */}
-      <mesh position-y={BOX_TOP - 0.07} castShadow>
-        <cylinderGeometry args={[r + 0.003, r + 0.003, 0.03, 72, 1, true]} />
-        <meshPhysicalMaterial color={ribbon} roughness={0.32} sheen={1} sheenColor="#ffffff" clearcoat={0.25} side={THREE.DoubleSide} />
-      </mesh>
-      <group position={[0, BOX_TOP - 0.07, r + 0.006]}>
-        <Bow color={ribbon} scale={1.0 + dims.S * 0.8} />
-      </group>
-    </group>
-  )
-}
-
 /** Ribbon radius at the binding for each shape. */
 /** Outer paper radius at height y for each shape (the ribbon sits just outside it). */
 function paperRadius(shape: ShapeId, d: Dims, y: number) {
@@ -515,160 +474,6 @@ function PosyWrap({ dims, tieY, bottom, wrapId, ribbon }: { dims: Dims; tieY: nu
       </mesh>
     </group>
   )
-}
-
-/** Heart outline (unit size, point toward -y before rotation). */
-function heartShape(k: number, inset = 0) {
-  const s = (v: number) => v * (k - inset)
-  const sh = new THREE.Shape()
-  sh.moveTo(0, s(-1))
-  sh.bezierCurveTo(s(-0.6), s(-0.55), s(-1.15), s(-0.2), s(-1.0), s(0.3))
-  sh.bezierCurveTo(s(-0.9), s(0.85), s(-0.25), s(0.95), 0, s(0.5))
-  sh.bezierCurveTo(s(0.25), s(0.95), s(0.9), s(0.85), s(1.0), s(0.3))
-  sh.bezierCurveTo(s(1.15), s(-0.2), s(0.6), s(-0.55), 0, s(-1))
-  return sh
-}
-
-/** Heart-shaped box (paper colour) filled with flowers; bow at the point. */
-function HeartBox({ dims, wrapId, ribbon }: { dims: Dims; wrapId: string; ribbon: string }) {
-  const wrap = wrapById(wrapId)
-  const top = containerTop('heartbox')
-  const h = top + 0.06
-  const k = heartWidth(dims) / 2.2
-  const { walls, lining, moss } = useMemo(() => {
-    const ring = heartShape(k)
-    ring.holes.push(heartShape(k, 0.012) as unknown as THREE.Path)
-    const walls = new THREE.ExtrudeGeometry(ring, { depth: h, bevelEnabled: false, curveSegments: 40 })
-    const lining = new THREE.ExtrudeGeometry(heartShape(k, 0.012), { depth: h - 0.004, bevelEnabled: false, curveSegments: 40 })
-    const moss = new THREE.ShapeGeometry(heartShape(k, 0.014), 40)
-    return { walls, lining, moss }
-  }, [k, h])
-  useEffect(() => () => { walls.dispose(); lining.dispose(); moss.dispose() }, [walls, lining, moss])
-  // centre the round dome in the heart's upper middle
-  const shift = 0.15 * k
-  return (
-    <group position-z={shift}>
-      <group rotation-x={-Math.PI / 2} position-y={-0.06}>
-        <mesh geometry={walls} castShadow receiveShadow>
-          <meshPhysicalMaterial color={wrap.outer} roughness={0.42} clearcoat={0.35} />
-        </mesh>
-        <mesh geometry={lining}>
-          <meshStandardMaterial color={wrap.inner} roughness={0.8} side={THREE.BackSide} />
-        </mesh>
-        <mesh geometry={moss} position-z={h - 0.012}>
-          <meshStandardMaterial color="#2f4127" roughness={1} />
-        </mesh>
-      </group>
-      <group position={[0, top - 0.05, k + 0.005]}>
-        <Bow color={ribbon} scale={1.0 + dims.S * 0.8} />
-      </group>
-    </group>
-  )
-}
-
-/** Paper shopping bag with handles; flowers spill out of the top. */
-function FlowerBag({ dims, wrapId, ribbon }: { dims: Dims; wrapId: string; ribbon: string }) {
-  const wrap = wrapById(wrapId)
-  const top = containerTop('bag')
-  const { w, dep } = bagSize(dims)
-  const h = top + 0.06
-  const t = 0.006
-  const y = -0.06 + h / 2
-  const walls: [number, number, number, number, number, number][] = [
-    [0, y, dep / 2, w, h, t],
-    [0, y, -dep / 2, w, h, t],
-    [w / 2, y, 0, t, h, dep],
-    [-w / 2, y, 0, t, h, dep],
-  ]
-  return (
-    <group>
-      {walls.map(([x, yy, z, bw, bh, bd], i) => (
-        <mesh key={i} position={[x, yy, z]} castShadow receiveShadow>
-          <boxGeometry args={[bw, bh, bd]} />
-          <meshStandardMaterial color={wrap.outer} roughness={0.8} />
-        </mesh>
-      ))}
-      {/* folded top band in the lining colour */}
-      {walls.map(([x, , z, bw, , bd], i) => (
-        <mesh key={`f${i}`} position={[x * 1.02, top - 0.018, z * 1.02]}>
-          <boxGeometry args={[bw + (bw > bd ? 0.004 : 0), 0.036, bd + (bd > bw ? 0.004 : 0)]} />
-          <meshStandardMaterial color={wrap.inner} roughness={0.8} />
-        </mesh>
-      ))}
-      <mesh position-y={top - 0.012}>
-        <boxGeometry args={[w - 0.02, 0.01, dep - 0.02]} />
-        <meshStandardMaterial color="#2f4127" roughness={1} />
-      </mesh>
-      {/* rope handles, front and back */}
-      {[1, -1].map((side) => (
-        <mesh key={side} position={[0, top, side * (dep / 2 + 0.004)]} castShadow>
-          <torusGeometry args={[w * 0.2, 0.0045, 8, 32, Math.PI]} />
-          <meshStandardMaterial color={wrap.inner} roughness={0.9} />
-        </mesh>
-      ))}
-      <group position={[0, top - 0.11, dep / 2 + 0.006]}>
-        <Bow color={ribbon} scale={1.0 + dims.S * 0.8} />
-      </group>
-    </group>
-  )
-}
-
-/** Galvanised flower bucket with fabric lining ruffle, ribbon band and wire handle. */
-function Bucket({ dims, wrapId, ribbon }: { dims: Dims; wrapId: string; ribbon: string }) {
-  const wrap = wrapById(wrapId)
-  const top = containerTop('bucket')
-  const R = bucketRadius(dims)
-  const rb = R * 0.8
-  const { body, liner } = useMemo(() => {
-    const body = new THREE.LatheGeometry([new THREE.Vector2(0, -0.06), new THREE.Vector2(rb, -0.06), new THREE.Vector2(R, top)], 64)
-    const sheets = Array.from({ length: 8 }, (_, i) =>
-      sheetGeo({ thc: (i / 8) * Math.PI * 2, span: 1.1, height: 0.075, y0: top - 0.04, r0: R - 0.012, slope: 0.6, flare: 0.02, peak: 0.35, seed: i * 1.9 }),
-    )
-    const liner = mergeGeometries(sheets)!
-    sheets.forEach((g) => g.dispose())
-    return { body, liner }
-  }, [R, rb, top])
-  useEffect(() => () => { body.dispose(); liner.dispose() }, [body, liner])
-  const bandY = -0.06 + (top + 0.06) * 0.42
-  const bandR = rb + (R - rb) * 0.42 + 0.003
-  const metal = { color: '#e6eaec', metalness: 0.2, roughness: 0.45 }
-  return (
-    <group>
-      <mesh geometry={body} castShadow receiveShadow>
-        <meshStandardMaterial {...metal} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position-y={top} rotation-x={Math.PI / 2} castShadow>
-        <torusGeometry args={[R, 0.007, 10, 64]} />
-        <meshStandardMaterial {...metal} />
-      </mesh>
-      <mesh geometry={liner} castShadow receiveShadow>
-        <meshStandardMaterial color={wrap.outer} roughness={0.85} side={THREE.DoubleSide} />
-      </mesh>
-      <mesh position-y={bandY} castShadow>
-        <cylinderGeometry args={[bandR + 0.004, bandR - 0.004, 0.03, 64, 1, true]} />
-        <meshPhysicalMaterial color={ribbon} roughness={0.32} sheen={1} sheenColor="#ffffff" side={THREE.DoubleSide} />
-      </mesh>
-      <group position={[0, bandY, bandR + 0.004]}>
-        <Bow color={ribbon} scale={0.9 + dims.S * 0.7} />
-      </group>
-      {/* wire handle, folded back */}
-      <group position-y={top - 0.01} rotation-x={-1.15}>
-        <mesh>
-          <torusGeometry args={[R + 0.004, 0.0035, 8, 48, Math.PI]} />
-          <meshStandardMaterial {...metal} />
-        </mesh>
-      </group>
-    </group>
-  )
-}
-
-/** The container that sits on the table (or null → the chosen stand is used). */
-function Container({ shape, dims, wrapId, ribbon }: { shape: ShapeId; dims: Dims; wrapId: string; ribbon: string }) {
-  if (shape === 'box') return <HatBox dims={dims} wrapId={wrapId} ribbon={ribbon} />
-  if (shape === 'heartbox') return <HeartBox dims={dims} wrapId={wrapId} ribbon={ribbon} />
-  if (shape === 'bag') return <FlowerBag dims={dims} wrapId={wrapId} ribbon={ribbon} />
-  if (shape === 'bucket') return <Bucket dims={dims} wrapId={wrapId} ribbon={ribbon} />
-  return null
 }
 
 // ---------------------------------------------------------------- interaction
@@ -843,7 +648,7 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
 
   return (
     <group ref={root}>
-      {isContainer(shape) ? <Container shape={shape} dims={dims} wrapId={design.wrap} ribbon={design.ribbon} /> : <Stand id={design.stand} />}
+      <Stand id={design.stand} />
       <group position-y={lift}>
       {shape === 'korean' && <LayeredWrap dims={dims} wrapId={design.wrap} />}
       {shape === 'cone' && <ConeWrap dims={dims} wrapId={design.wrap} />}
@@ -859,7 +664,7 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
           {interactive && <Markers heads={heads} />}
         </group>
       </group>
-      {!isContainer(shape) && <RibbonBand dims={tied} color={design.ribbon} shape={shape} />}
+      <RibbonBand dims={tied} color={design.ribbon} shape={shape} />
       </group>
     </group>
   )
