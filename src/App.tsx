@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LANGS, bouquetLabel, useLang, useT } from './i18n'
 import { useDesign, useUI } from './state/store'
 import { Scene } from './three/Scene'
@@ -7,6 +7,8 @@ import { DragGhost } from './ui/FlowerLibrary'
 import { GiftPanel } from './ui/GiftPanel'
 import { PhotoMode } from './ui/PhotoMode'
 import { usePhoto } from './state/photo'
+import { ROOMS, roomById, useRoom } from './three/rooms'
+import type { StrKey } from './i18n'
 
 function useReducedMotionSync() {
   useEffect(() => {
@@ -186,6 +188,58 @@ function EmptyHint() {
   )
 }
 
+const swatchBg = (sw: [string, string, string]) => `conic-gradient(${sw[0]} 0 50%, ${sw[1]} 50% 75%, ${sw[2]} 75%)`
+
+/** Toolbar button + small menu to switch the room/table while arranging. */
+function RoomMenu() {
+  const { t } = useT()
+  const room = useRoom((s) => s.room)
+  const [open, setOpen] = useState(false)
+  const root = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: PointerEvent) => {
+      if (!root.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    window.addEventListener('pointerdown', onDown)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('pointerdown', onDown)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  return (
+    <div className="switcher room-menu" ref={root}>
+      <button className="btn ghost room-btn" onClick={() => setOpen((o) => !o)} aria-haspopup="menu" aria-expanded={open} aria-label={t('room')} title={t('room')}>
+        <span className="room-swatch" style={{ background: swatchBg(roomById(room).swatch) }} />
+        <span className="desk-only">{t('room')}</span>
+      </button>
+      {open && (
+        <div className="menu room-pop" role="menu">
+          <div className="menu-label muted">{t('room')}</div>
+          {ROOMS.map((r) => (
+            <button
+              key={r.id}
+              role="menuitemradio"
+              aria-checked={r.id === room}
+              className={`menu-item ${r.id === room ? 'is-on' : ''}`}
+              onClick={() => {
+                useRoom.getState().setRoom(r.id)
+                setOpen(false)
+              }}
+            >
+              <span className="room-swatch big" style={{ background: swatchBg(r.swatch) }} />
+              <span className="menu-item-name">{t(`room_${r.id}` as StrKey)}</span>
+              {r.id === room && <span aria-hidden="true">✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Toolbar() {
   const { t } = useT()
   return (
@@ -195,6 +249,7 @@ function Toolbar() {
       </button>
       <BouquetSwitcher />
       <UndoRedo />
+      <RoomMenu />
       <button className="btn primary photo-btn" onClick={() => useUI.getState().set({ mode: 'photo', selected: null })} aria-label={t('photoMode')}>
         📷<span className="desk-only"> {t('photo')}</span>
       </button>
