@@ -179,9 +179,10 @@ function sheetGeo(o: SheetOpts) {
     for (let i = 0; i <= segU; i++) {
       const u = -1 + (2 * i) / segU
       const th = o.thc + (u * o.span) / 2
-      const top = o.y0 + o.height * (1 - o.peak * Math.pow(Math.abs(u), 1.3))
+      // soft rounded top edge (like a real folded sheet), not a sharp point
+      const top = o.y0 + o.height * (1 - o.peak * u * u)
       const y = o.y0 + (top - o.y0) * v
-      const r = o.r0 + (y - o.y0) * o.slope + o.flare * v * v * v + 0.008 * Math.sin(u * 5 + o.seed) * v * v
+      const r = o.r0 + (y - o.y0) * o.slope + o.flare * v * v * v + 0.005 * Math.sin(u * 4 + o.seed) * v * v
       pos.push(r * Math.cos(th), y, r * Math.sin(th))
       uv.push((u + 1) / 2, v)
     }
@@ -344,11 +345,14 @@ function HatBox({ dims, wrapId, ribbon }: { dims: Dims; wrapId: string; ribbon: 
 }
 
 /** Ribbon radius at the binding for each shape. */
-function bandRadius(shape: ShapeId, d: Dims) {
-  if (shape === 'cone') return CONE_R0 + 0.005 + (d.bindY - CONE_Y0) * coneSlope(d) * 1.04 + 0.006
-  if (shape === 'handtied') return CUFF_R0 + 0.006 + 0.06 * CUFF_SLOPE + 0.008
-  return WRAP_R0 + 0.016 + (d.bindY - WRAP_Y0) * wrapSlope(d) * 1.032 + 0.004
+/** Outer paper radius at height y for each shape (the ribbon sits just outside it). */
+function paperRadius(shape: ShapeId, d: Dims, y: number) {
+  if (shape === 'cone') return CONE_R0 + 0.005 + (y - CONE_Y0) * coneSlope(d) * 1.04
+  if (shape === 'handtied') return CUFF_R0 + 0.006 + (y - (d.bindY - 0.06)) * CUFF_SLOPE
+  return WRAP_R0 + 0.016 + (y - WRAP_Y0) * wrapSlope(d) * 1.032
 }
+const BAND_H = 0.034
+const BAND_GAP = 0.009
 
 // ---------------------------------------------------------------- satin ribbon + bow
 
@@ -407,11 +411,13 @@ function Bow({ color, scale }: { color: string; scale: number }) {
 }
 
 function RibbonBand({ dims, color, shape }: { dims: Dims; color: string; shape: ShapeId }) {
-  const r = bandRadius(shape, dims)
+  const r = paperRadius(shape, dims, dims.bindY) + BAND_GAP
+  const rTop = paperRadius(shape, dims, dims.bindY + BAND_H / 2) + BAND_GAP
+  const rBot = paperRadius(shape, dims, dims.bindY - BAND_H / 2) + BAND_GAP
   return (
     <group position-y={dims.bindY}>
       <mesh castShadow>
-        <cylinderGeometry args={[r, r * 0.96, 0.034, 48, 1, true]} />
+        <cylinderGeometry args={[rTop, rBot, BAND_H, 64, 1, true]} />
         <meshPhysicalMaterial color={color} roughness={0.32} sheen={1} sheenColor="#ffffff" clearcoat={0.25} side={THREE.DoubleSide} />
       </mesh>
       <group position={[0, 0, r + 0.004]}>
