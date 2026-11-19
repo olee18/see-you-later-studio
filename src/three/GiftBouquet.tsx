@@ -106,6 +106,79 @@ function FlowerBatch({ heads }: { heads: Head[] }) {
   )
 }
 
+/** Flowers needed before the greenery shows (an almost empty bouquet would read as a bare green disc). */
+const FOLIAGE_MIN = 6
+const LEAF_GEO = (() => {
+  const g = new THREE.SphereGeometry(1, 8, 5)
+  g.scale(0.017, 0.0035, 0.04)
+  g.translate(0, 0, 0.034)
+  return g
+})()
+const LEAF_COLORS = ['#3f6a37', '#4f7a43', '#6b9558', '#5a8a4a']
+
+/**
+ * Greenery under the flower heads, like the leaves a florist tucks in: a dark
+ * base (gaps read as shadow, only drawn from above) covered with overlapping
+ * leaves, plus a fringe of leaves poking out between the rim flowers and the paper.
+ */
+function FoliageBed({ dims, count }: { dims: Dims; count: number }) {
+  const leaves = useMemo(() => {
+    const area = 2 * Math.PI * dims.R * dims.R * (1 - Math.cos(dims.cap))
+    const N = Math.round(Math.min(420, Math.max(60, area / 0.0011)))
+    const mat = new THREE.MeshStandardMaterial({ roughness: 0.75, side: THREE.DoubleSide })
+    const m = new THREE.InstancedMesh(LEAF_GEO, mat, N)
+    const rnd = mulberry32(Math.round(dims.R * 1000 + count * 7))
+    const center = new THREE.Vector3(0, dims.cy, 0)
+    const cMin = Math.cos(Math.min(Math.PI * 0.6, dims.cap * 1.04))
+    const n = new THREE.Vector3()
+    const f = new THREE.Vector3()
+    const x = new THREE.Vector3()
+    const y = new THREE.Vector3()
+    const z = new THREE.Vector3()
+    const basis = new THREE.Matrix4()
+    const c = new THREE.Color()
+    const k = 0.85 + 0.35 * dims.S
+    for (let i = 0; i < N; i++) {
+      const ct = 1 - rnd() * (1 - cMin)
+      const st = Math.sqrt(1 - ct * ct)
+      const ph = rnd() * Math.PI * 2
+      n.set(st * Math.cos(ph), ct, st * Math.sin(ph))
+      // down-the-dome direction, twisted a little so leaves overlap like shingles
+      f.set(ct * Math.cos(ph), -st, ct * Math.sin(ph))
+      if (st < 0.05) f.set(Math.cos(ph), 0, Math.sin(ph))
+      f.applyAxisAngle(n, (rnd() - 0.5) * 1.6).addScaledVector(n, 0.25 + rnd() * 0.2).normalize()
+      x.crossVectors(n, f).normalize()
+      y.crossVectors(f, x)
+      z.copy(f)
+      const edge = ct < Math.cos(dims.cap) // fringe beyond the flowers
+      const r = dims.R * (edge ? 0.92 : 0.9 + rnd() * 0.04)
+      basis.makeBasis(x, y, z)
+      const s = k * (edge ? 0.85 : 0.8 + rnd() * 0.5)
+      basis.scale(new THREE.Vector3(s, s, s))
+      basis.setPosition(center.clone().addScaledVector(n, r))
+      m.setMatrixAt(i, basis)
+      m.setColorAt(i, c.set(LEAF_COLORS[Math.floor(rnd() * LEAF_COLORS.length)]).offsetHSL(0, 0, (rnd() - 0.5) * 0.06))
+    }
+    m.castShadow = true
+    m.receiveShadow = true
+    m.instanceMatrix.needsUpdate = true
+    if (m.instanceColor) m.instanceColor.needsUpdate = true
+    m.computeBoundingSphere()
+    return m
+  }, [dims, count])
+  useEffect(() => () => { (leaves.material as THREE.Material).dispose(); leaves.dispose() }, [leaves])
+  if (count < FOLIAGE_MIN || dims.cap < 0.05) return null
+  return (
+    <group>
+      <mesh position-y={dims.cy} receiveShadow>
+        <sphereGeometry args={[dims.R * 0.88, 40, 16, 0, Math.PI * 2, 0, dims.cap * 0.98]} />
+        <meshStandardMaterial color="#2c4626" roughness={1} side={THREE.FrontSide} />
+      </mesh>
+      <primitive object={leaves} />
+    </group>
+  )
+}
+
 /**
  * Stems from the binding point up to each head. `lower` (hand-tied / posy) adds
  * the part below the tie: the stems cross at the tie and spread a little going
@@ -217,7 +290,7 @@ function LayeredWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
       sheet(BACK + o, 1.55, (base + 0.12 * S) * (1 - 0.1 * Math.abs(o)), 0.006, 0.08 + 0.12 * S, 0.3, 5 + i * 1.7),
     )
     // front: lower in the middle, sweeping up at the sides (negative peak)
-    const front = sheet(FRONT, 2.7, base * 0.88, 0.012, 0.04 + 0.06 * S, -0.18, 11)
+    const front = sheet(FRONT, 2.7, base * 0.93, 0.012, 0.04 + 0.06 * S, -0.13, 11)
     const inner = mergeGeometries(innerSheets)!
     const outer = mergeGeometries([...outerSheets, front])!
     ;[...innerSheets, ...outerSheets, front].forEach((g) => g.dispose())
@@ -586,6 +659,7 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
       <group ref={flowers} position-y={dims.bindY}>
         <group position-y={-dims.bindY}>
           <StemBatch heads={heads} bindY={tied.bindY} lower={shape === 'handtied' ? { bottom: stemBottom, maxR: standSeatR(design.stand) } : shape === 'posy' ? { bottom: stemBottom, maxR: POSY_HANDLE_R * 0.7 } : undefined} />
+          <FoliageBed dims={dims} count={heads.length} />
           <FlowerBatch heads={batched} />
           {popHead && pop && <PopFlower head={popHead} popKey={pop.key} />}
           {interactive && <PickProxy heads={heads} />}
