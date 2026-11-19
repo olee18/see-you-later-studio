@@ -2,8 +2,9 @@ import { Environment, Lightformer } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
-import { useDesign, useUI } from '../state/store'
-import type { LightMood } from '../state/types'
+import { useUI } from '../state/store'
+
+type LightMood = 'morning' | 'golden' | 'studio'
 import { BENCH_ROOT, HERO_ROOT } from './stage'
 
 const FLOOR = '#e7d9c7'
@@ -169,16 +170,18 @@ function SunLight({ mood }: { mood: LightMood }) {
 }
 
 export function Studio() {
-  const bg = useDesign((s) => s.design.background)
+  const bg = { color: '#f6efe8', mood: 'morning' as LightMood }
   const m = MOODS[bg.mood]
-  const wall = useMemo(() => new THREE.Color(bg.color).multiplyScalar(0.975), [bg.color])
-  const glow = useMemo(() => new THREE.Color(m.glow).multiplyScalar(m.glowI), [m])
+  const wall = useMemo(() => new THREE.Color(bg.color).multiplyScalar(0.975), [])
+  const glow = useMemo(() => new THREE.Color(m.glow).multiplyScalar(m.glowI), [])
   return (
     <>
       <color attach="background" args={[bg.color]} />
       <fog attach="fog" args={[bg.color, 7, 18]} />
       <hemisphereLight args={[m.sky, m.ground, m.hemi]} />
       <SunLight mood={bg.mood} />
+      {/* soft front fill so paper facing the viewer stays bright */}
+      <directionalLight position={[0.6, 3, 6]} intensity={0.85} color="#fff6ee" />
       <Environment resolution={256} frames={1} environmentIntensity={m.env}>
         <Lightformer form="rect" intensity={4} color="#fff6ea" position={[-3, 2.5, -5]} scale={[4, 3, 1]} />
         <Lightformer form="rect" intensity={2.5} color="#fff6ea" position={[2, 2.5, -5]} scale={[3, 3, 1]} />

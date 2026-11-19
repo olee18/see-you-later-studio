@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { FLOWERS } from '../data/flowers'
-import { MAX_BOUQUETS, useDesign, type SavedBouquet } from '../state/store'
-
-function dotsFor(b: SavedBouquet) {
-  const seen = new Set<string>()
-  for (const s of b.design.stems) {
-    if (FLOWERS[s.type].category === 'flower') seen.add(s.colors.petal)
-    if (seen.size >= 4) break
-  }
-  return [...seen]
-}
+import { MAX_BOUQUETS, useDesign } from '../state/store'
+import { BouquetThumb } from './BouquetThumb'
 
 /** "My bouquets" menu: switch, create, rename, duplicate, delete. */
 export function BouquetSwitcher() {
@@ -96,13 +87,9 @@ export function BouquetSwitcher() {
                     setOpen(false)
                   }}
                 >
-                  <span className="palette mini">
-                    {dotsFor(b).map((c) => (
-                      <i key={c} style={{ background: c }} />
-                    ))}
-                  </span>
+                  <BouquetThumb styleId={b.design.style} wrapId={b.design.wrap} ribbon={b.design.ribbon} size={34} />
                   <span className="menu-item-name">{b.name}</span>
-                  <span className="muted">{b.design.stems.length} stems</span>
+                  <span className="muted">{b.design.size}</span>
                 </button>
               </li>
             ))}

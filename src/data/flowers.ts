@@ -313,16 +313,16 @@ const gerbera: FlowerDef['build'] = (open, rnd) => {
 const babysBreath: FlowerDef['build'] = (open, rnd) => {
   const branches: THREE.Matrix4[] = []
   const florets: THREE.Matrix4[] = []
-  for (let b = 0; b < 8; b++) {
+  for (let b = 0; b < 9; b++) {
     const a = rnd() * Math.PI * 2
-    const p = (12 + rnd() * 48) * DEG
-    const start = V(0, -0.07 + rnd() * 0.07, 0)
-    const len = 0.05 + rnd() * 0.06
+    const p = (8 + rnd() * 42) * DEG
+    const start = V(0, -0.04 + rnd() * 0.04, 0)
+    const len = 0.035 + rnd() * 0.04
     const end = start.clone().add(V(Math.cos(a) * Math.sin(p), Math.cos(p), Math.sin(a) * Math.sin(p)).multiplyScalar(len))
     branches.push(segM(start, end, 0.0011))
-    const k = 6 + Math.floor(rnd() * 5)
+    const k = 11 + Math.floor(rnd() * 6)
     for (let i = 0; i < k; i++) {
-      const tip = end.clone().add(V((rnd() - 0.5) * 0.04, rnd() * 0.022, (rnd() - 0.5) * 0.04))
+      const tip = end.clone().add(V((rnd() - 0.5) * 0.032, rnd() * 0.02, (rnd() - 0.5) * 0.032))
       branches.push(segM(end, tip, 0.0005))
       florets.push(blobM(tip, (0.0028 + rnd() * 0.0016) * (0.55 + 0.45 * open)))
     }

@@ -6,32 +6,53 @@ import { BlendFunction, ToneMappingMode } from 'postprocessing'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { sampleDesign, useDesign, useUI } from '../state/store'
-import { Bouquet } from './Bouquet'
-import { BENCH_ROOT, CAMERAS, HERO_ROOT, stage } from './stage'
+import { dimsFor, type Dims } from '../gift/layout'
+import { giftFromStyle } from '../gift/styles'
+import { useDesign, useUI } from '../state/store'
+import { GiftBouquet } from './GiftBouquet'
+import { BENCH_ROOT, HERO_ROOT, stage } from './stage'
 import { Studio } from './Studio'
 
-/** Desktop: library panel on the left. Mobile: library sheet at the bottom. */
+const FOV = 35
+const HERO_DESIGN = giftFromStyle('sweet-pink', 'L')
+const HERO_DIMS = dimsFor(HERO_DESIGN)
+
+/** Desktop: options panel on the right. Mobile: options sheet at the bottom. */
 function panelOffset(w: number, h: number, mode: 'hero' | 'arrange') {
   if (mode !== 'arrange') return { x: 0, y: 0 }
-  if (w >= 820) return { x: 150, y: 0 }
-  return { x: 0, y: Math.min(110, h * 0.12) }
+  if (w >= 820) return { x: -Math.min(190, w * 0.15), y: 0 }
+  return { x: 0, y: Math.min(200, h * 0.22) }
 }
 
-function presetFor(mode: 'hero' | 'arrange', narrow: boolean) {
-  if (mode === 'hero') return narrow ? CAMERAS.heroNarrow : CAMERAS.hero
-  return narrow ? CAMERAS.benchNarrow : CAMERAS.bench
+/** Frame the whole bouquet (paper peaks, flare and bow included). */
+function shotFor(mode: 'hero' | 'arrange', w: number, h: number, dims: Dims) {
+  const narrow = w < h * 0.95
+  const root = mode === 'hero' ? HERO_ROOT : BENCH_ROOT
+  const H = dims.topY + 0.26
+  const W = 2 * (dims.rimR * 1.06 + 0.12 + 0.2 * dims.S)
+  const t = Math.tan(((FOV / 2) * Math.PI) / 180)
+  const aspect = (mode === 'arrange' && !narrow ? w * 0.7 : w) / h
+  let d = Math.max(((H / 2) * 1.22) / t, ((W / 2) * 1.18) / (t * aspect))
+  if (mode === 'arrange' && narrow) d *= 1.3
+  const elev = (mode === 'hero' ? 22 : 30) * (Math.PI / 180)
+  const target = root.clone().add(new THREE.Vector3(0, H * 0.46, 0))
+  if (mode === 'hero' && !narrow) target.x -= d * 0.2
+  if (mode === 'hero' && narrow) target.y -= H * 0.32
+  const pos = target.clone().add(new THREE.Vector3(mode === 'hero' ? d * 0.12 : 0, Math.sin(elev) * d, Math.cos(elev) * d))
+  return { pos, target }
 }
 
 function CameraRig() {
   const mode = useUI((s) => s.mode)
   const reduced = useUI((s) => s.reducedMotion)
+  const style = useDesign((s) => s.design.style)
+  const sizeId = useDesign((s) => s.design.size)
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const size = useThree((s) => s.size)
   const controls = useRef<OrbitControlsImpl>(null!)
-  const first = useRef(true)
   const offset = useRef({ x: 0, y: 0 })
-  const narrow = size.width < size.height * 0.95
+  const last = useRef<{ mode: string; S: number } | null>(null)
+  const dims = useMemo(() => (mode === 'hero' ? HERO_DIMS : dimsFor({ style, size: sizeId })), [mode, style, sizeId])
 
   const applyOffset = () => {
     const { x, y } = offset.current
@@ -48,25 +69,25 @@ function CameraRig() {
 
   useLayoutEffect(() => {
     const c = controls.current
-    const preset = presetFor(mode, narrow)
+    const shot = shotFor(mode, size.width, size.height, dims)
     const off = panelOffset(size.width, size.height, mode)
-    const ui = useUI.getState()
-    c.enabled = false
-    if (first.current || reduced) {
-      first.current = false
-      camera.position.copy(preset.pos)
-      c.target.copy(preset.target)
+    const prev = last.current
+    last.current = { mode, S: dims.S }
+    const modeChanged = !prev || prev.mode !== mode
+    const sizeChanged = !!prev && Math.abs(prev.S - dims.S) > 1e-4
+
+    if (!prev || reduced || (!modeChanged && !sizeChanged)) {
+      // first frame, reduced motion, or a resize: jump straight to the framing
+      camera.position.copy(shot.pos)
+      c.target.copy(shot.target)
       offset.current = off
       applyOffset()
       c.update()
       c.enabled = mode === 'arrange'
       return
     }
-    ui.set({ cameraBusy: true })
-    // lift the camera slightly mid-flight for a gentle arc
-    const mid = camera.position.clone().lerp(preset.pos, 0.5)
-    mid.y += 0.35
-    mid.z += 0.6
+    c.enabled = false
+    useUI.getState().set({ cameraBusy: modeChanged })
     const tl = gsap.timeline({
       onUpdate: () => {
         applyOffset()
@@ -77,36 +98,25 @@ function CameraRig() {
         useUI.getState().set({ cameraBusy: false })
       },
     })
-    tl.to(camera.position, { x: mid.x, y: mid.y, z: mid.z, duration: 1.0, ease: 'power2.in' }, 0)
-      .to(camera.position, { x: preset.pos.x, y: preset.pos.y, z: preset.pos.z, duration: 1.1, ease: 'power3.out' }, 1.0)
-      .to(c.target, { x: preset.target.x, y: preset.target.y, z: preset.target.z, duration: 2.1, ease: 'power3.inOut' }, 0)
-      .to(offset.current, { x: off.x, y: off.y, duration: 2.1, ease: 'power3.inOut' }, 0)
+    if (modeChanged) {
+      const mid = camera.position.clone().lerp(shot.pos, 0.5)
+      mid.y += 0.35
+      mid.z += 0.6
+      tl.to(camera.position, { x: mid.x, y: mid.y, z: mid.z, duration: 1.0, ease: 'power2.in' }, 0)
+        .to(camera.position, { x: shot.pos.x, y: shot.pos.y, z: shot.pos.z, duration: 1.1, ease: 'power3.out' }, 1.0)
+        .to(c.target, { x: shot.target.x, y: shot.target.y, z: shot.target.z, duration: 2.1, ease: 'power3.inOut' }, 0)
+        .to(offset.current, { x: off.x, y: off.y, duration: 2.1, ease: 'power3.inOut' }, 0)
+    } else {
+      // bouquet size changed: glide to the new framing
+      tl.to(camera.position, { x: shot.pos.x, y: shot.pos.y, z: shot.pos.z, duration: 0.9, ease: 'power2.inOut' }, 0)
+        .to(c.target, { x: shot.target.x, y: shot.target.y, z: shot.target.z, duration: 0.9, ease: 'power2.inOut' }, 0)
+    }
     return () => {
       tl.kill()
       useUI.getState().set({ cameraBusy: false })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode])
-
-  // keep the panel offset right when the window resizes
-  useEffect(() => {
-    if (useUI.getState().cameraBusy) return
-    offset.current = panelOffset(size.width, size.height, mode)
-    applyOffset()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size.width, size.height])
-
-  // portrait <-> landscape: re-frame the shot
-  const lastNarrow = useRef(narrow)
-  useEffect(() => {
-    if (lastNarrow.current === narrow || useUI.getState().cameraBusy) return
-    lastNarrow.current = narrow
-    const preset = presetFor(mode, narrow)
-    camera.position.copy(preset.pos)
-    controls.current.target.copy(preset.target)
-    controls.current.update()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [narrow])
+  }, [mode, dims, size.width, size.height])
 
   return (
     <OrbitControls
@@ -115,8 +125,8 @@ function CameraRig() {
       enablePan={false}
       enableDamping
       dampingFactor={0.08}
-      minDistance={0.65}
-      maxDistance={3.0}
+      minDistance={0.6}
+      maxDistance={5}
       minPolarAngle={0.2}
       maxPolarAngle={1.62}
       rotateSpeed={0.7}
@@ -125,13 +135,12 @@ function CameraRig() {
   )
 }
 
-function PickBridge() {
+function StageBridge() {
   const camera = useThree((s) => s.camera)
   const gl = useThree((s) => s.gl)
   const scene = useThree((s) => s.scene)
   useEffect(() => {
     stage.camera = camera
-    stage.dom = gl.domElement
     stage.gl = gl
     stage.scene = scene
   }, [camera, gl, scene])
@@ -139,7 +148,6 @@ function PickBridge() {
 }
 
 function HeroStation() {
-  const design = useMemo(sampleDesign, [])
   const mode = useUI((s) => s.mode)
   const busy = useUI((s) => s.cameraBusy)
   const reduced = useUI((s) => s.reducedMotion)
@@ -150,7 +158,7 @@ function HeroStation() {
   return (
     <group position={HERO_ROOT} visible={mode === 'hero' || busy}>
       <group ref={spin}>
-        <Bouquet design={design} sway={!reduced} />
+        <GiftBouquet design={HERO_DESIGN} sway={!reduced} animate={false} />
       </group>
     </group>
   )
@@ -161,7 +169,7 @@ function BenchStation() {
   const reduced = useUI((s) => s.reducedMotion)
   return (
     <group position={BENCH_ROOT}>
-      <Bouquet design={design} interactive sway={!reduced} />
+      <GiftBouquet design={design} sway={!reduced} animate={!reduced} />
     </group>
   )
 }
@@ -208,12 +216,8 @@ export function Scene() {
     <Canvas
       shadows
       dpr={low ? [1, 1.25] : [1, 1.75]}
-      camera={{ fov: 35, near: 0.05, far: 40, position: CAMERAS.hero.pos.toArray() }}
+      camera={{ fov: FOV, near: 0.05, far: 40, position: [-2.4, 1.6, 2.2] }}
       gl={{ antialias: false, powerPreference: 'high-performance' }}
-      onPointerMissed={() => {
-        const ui = useUI.getState()
-        if (!ui.drag3d && !ui.libDrag) ui.set({ selectedId: null })
-      }}
     >
       <PerformanceMonitor
         flipflops={3}
@@ -225,7 +229,7 @@ export function Scene() {
       <HeroStation />
       <BenchStation />
       <CameraRig />
-      <PickBridge />
+      <StageBridge />
       <Effects />
     </Canvas>
   )
