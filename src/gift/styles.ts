@@ -8,7 +8,7 @@ import { MAX_ITEMS, dimsFor, slotPos, type Item } from './layout'
  * and the person can then add, swap, recolour or remove any flower.
  */
 
-export type SizeId = 'S' | 'M' | 'L' | 'XL'
+export type SizeId = 'M' | 'L' | 'XL'
 export type Layout = 'dome' | 'ring' | 'heart' | 'garden'
 
 export interface MixEntry {
@@ -47,7 +47,6 @@ export interface GiftDesign {
 }
 
 export const SIZES: { id: SizeId; label: string; heads: number }[] = [
-  { id: 'S', label: 'Small', heads: 16 },
   { id: 'M', label: 'Medium', heads: 28 },
   { id: 'L', label: 'Large', heads: 44 },
   { id: 'XL', label: 'Grand', heads: 64 },
@@ -139,7 +138,7 @@ export const makeItem = (type: FlowerType, colors?: Partial<StemColors>, seed = 
 /** Fill the dome slots for a template at a given size. */
 export function templateItems(styleId: string, size: SizeId): Item[] {
   const style = styleById(styleId) ?? STYLES[0]
-  const sz = SIZES.find((s) => s.id === size) ?? SIZES[1]
+  const sz = SIZES.find((s) => s.id === size) ?? SIZES.find((s) => s.id === 'M')!
   const accents = (style.accents ?? []).flatMap((a) => Array.from({ length: Math.max(2, Math.round((a.count * sz.heads) / 28)) }, () => a))
   const n = Math.min(MAX_ITEMS, sz.heads + accents.length)
   const main = n - accents.length

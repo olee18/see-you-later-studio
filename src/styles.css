@@ -172,7 +172,7 @@ b { font-weight: 600; }
 .flower-dot.is-on { box-shadow: 0 0 0 3px #fff, 0 0 0 5.5px var(--ink); }
 
 /* templates */
-.size-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.size-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
 .size-chip {
   display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 64px; padding: 8px 4px; cursor: pointer;
   border: 2px solid var(--line); border-radius: 18px; background: rgba(255, 255, 255, 0.7); font-size: 13px; color: var(--ink-soft);
