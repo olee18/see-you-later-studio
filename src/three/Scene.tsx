@@ -11,7 +11,7 @@ import { giftFromStyle } from '../gift/styles'
 import { photoFrame, usePhoto, type PhotoAngle } from '../state/photo'
 import { useDesign, useUI } from '../state/store'
 import { GiftBouquet } from './GiftBouquet'
-import { standLift } from './Stands'
+import { bouquetLift } from '../gift/shapes'
 import { BENCH_ROOT, HERO_ROOT, stage } from './stage'
 import { Studio } from './Studio'
 
@@ -74,14 +74,15 @@ function CameraRig() {
   // re-frame only when the bouquet grows/shrinks noticeably (not on every flower)
   const bucket = useDesign((s) => Math.round(s.design.items.length / 6))
   const angle = usePhoto((s) => s.angle)
-  const benchLift = useDesign((s) => standLift(s.design.stand))
-  const lift = mode === 'hero' ? standLift(HERO_DESIGN.stand) : benchLift
+  const shape = useDesign((s) => s.design.shape)
+  const stand = useDesign((s) => s.design.stand)
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const size = useThree((s) => s.size)
   const controls = useRef<OrbitControlsImpl>(null!)
   const offset = useRef({ x: 0, y: 0 })
   const last = useRef<{ mode: string; S: number; angle: PhotoAngle } | null>(null)
   const dims = useMemo(() => (mode === 'hero' ? HERO_DIMS : dimsFor(Math.max(12, bucket * 6))), [mode, bucket])
+  const lift = mode === 'hero' ? bouquetLift(HERO_DESIGN.shape, HERO_DESIGN.stand, HERO_DIMS) : bouquetLift(shape, stand, dims)
 
   const applyOffset = () => {
     const { x, y } = offset.current
@@ -210,9 +211,10 @@ function HeroStation() {
 
 function BenchStation() {
   const design = useDesign((s) => s.design)
+  const n = design.items.length
   useEffect(() => {
-    stage.lift = standLift(design.stand)
-  }, [design.stand])
+    stage.lift = bouquetLift(design.shape, design.stand, dimsFor(n))
+  }, [design.shape, design.stand, n])
   const reduced = useUI((s) => s.reducedMotion)
   return (
     <group position={BENCH_ROOT}>

@@ -96,6 +96,18 @@ const STR = {
     'ເກັບໄດ້ສູງສຸດ {n} ຊໍ່ — ລຶບຊໍ່ເກົ່າອອກກ່ອນເດີ້',
   ],
   bouquetFull: ['The bouquet is full — {n} flowers max.', 'ช่อเต็มแล้ว — สูงสุด {n} ดอก', 'ຊໍ່ເຕັມແລ້ວ — ສູງສຸດ {n} ດອກ'],
+  // bouquet shapes
+  shape: ['Bouquet shape', 'รูปทรงช่อ', 'ຮູບຊົງຊໍ່'],
+  shape_korean: ['Korean wrap', 'ห่อสไตล์เกาหลี', 'ຫໍ່ແບບເກົາຫຼີ'],
+  shape_cone: ['Tall cone', 'ทรงกรวยสูง', 'ຊົງກວຍສູງ'],
+  shape_handtied: ['Hand-tied', 'ช่อมัดมือ', 'ຊໍ່ມັດມື'],
+  shape_box: ['Hat box', 'กล่องดอกไม้', 'ກ່ອງດອກໄມ້'],
+  boxNoStand: [
+    'The hat box sits right on the table — no stand needed.',
+    'กล่องดอกไม้วางบนโต๊ะได้เลย ไม่ต้องใช้ขาตั้ง',
+    'ກ່ອງດອກໄມ້ວາງເທິງໂຕະໄດ້ເລີຍ ບໍ່ຕ້ອງໃຊ້ຂາຕັ້ງ',
+  ],
+  boxColour: ['Box colour', 'สีกล่อง', 'ສີກ່ອງ'],
   // stands
   stand: ['Bouquet stand', 'ขาตั้งช่อ', 'ຂາຕັ້ງຊໍ່'],
   stand_gold: ['Gold stand', 'ขาตั้งสีทอง', 'ຂາຕັ້ງສີຄຳ'],

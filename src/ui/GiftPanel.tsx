@@ -5,6 +5,8 @@ import { bouquetLabel, useT } from '../i18n'
 import { useDesign, useUI } from '../state/store'
 import { BouquetThumb } from './BouquetThumb'
 import { StandIcon } from './StandIcon'
+import { ShapeIcon } from './ShapeIcon'
+import { SHAPES } from '../gift/shapes'
 import { STANDS } from '../gift/stands'
 import type { StrKey } from '../i18n'
 import { FlowerLibrary } from './FlowerLibrary'
@@ -49,11 +51,24 @@ function Paper() {
   const wrap = useDesign((s) => s.design.wrap)
   const ribbon = useDesign((s) => s.design.ribbon)
   const stand = useDesign((s) => s.design.stand)
+  const shape = useDesign((s) => s.design.shape)
   const { update } = useDesign.getState()
   const { t, color } = useT()
   return (
     <>
+      <h3 className="step-title">{t('shape')}</h3>
+      <div className="shape-row" role="radiogroup" aria-label={t('shape')}>
+        {SHAPES.map((s) => (
+          <button key={s} role="radio" aria-checked={s === shape} className={`stand-chip ${s === shape ? 'is-on' : ''}`} onClick={() => update({ shape: s })}>
+            <ShapeIcon id={s} size={56} />
+            <span className="wrap-name">{t(`shape_${s}` as StrKey)}</span>
+          </button>
+        ))}
+      </div>
       <h3 className="step-title">{t('stand')}</h3>
+      {shape === 'box' ? (
+        <p className="muted box-note">{t('boxNoStand')}</p>
+      ) : (
       <div className="stand-row" role="radiogroup" aria-label={t('stand')}>
         {STANDS.map((s) => (
           <button key={s.id} role="radio" aria-checked={s.id === stand} className={`stand-chip ${s.id === stand ? 'is-on' : ''}`} onClick={() => update({ stand: s.id })}>
@@ -62,7 +77,8 @@ function Paper() {
           </button>
         ))}
       </div>
-      <h3 className="step-title">{t('wrapping')}</h3>
+      )}
+      <h3 className="step-title">{shape === 'box' ? t('boxColour') : t('wrapping')}</h3>
       <div className="wrap-row" role="radiogroup" aria-label={t('wrapping')}>
         {WRAPS.map((w) => (
           <button key={w.id} role="radio" aria-checked={w.id === wrap} className={`wrap-chip ${w.id === wrap ? 'is-on' : ''}`} onClick={() => update({ wrap: w.id })} title={color(w.name)}>

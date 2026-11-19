@@ -6,11 +6,12 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { FLOWERS, mulberry32, type Part, type StemColors } from '../data/flowers'
 import { buildHeads, headRadius, quatFromDir, slotDir, slotPos, type Dims, type Head } from '../gift/layout'
 import { wrapById, type GiftDesign } from '../gift/styles'
+import { BOX_TOP, bouquetLift, boxRadius, type ShapeId } from '../gift/shapes'
 import { mainStemGeo } from './geometry'
 import { useDesign, useUI } from '../state/store'
 import { accentMaterial, createPetalMaterial, setPetalColors } from './materials'
 import { slotAtScreen, stage } from './stage'
-import { Stand, standLift } from './Stands'
+import { Stand } from './Stands'
 
 const GREEN = { stem: '#5f7f4a', leaf: '#6b8f55' }
 const UP = new THREE.Vector3(0, 1, 0)
@@ -118,7 +119,7 @@ function FoliageBase({ dims, count }: { dims: Dims; count: number }) {
   )
 }
 
-function StemBatch({ heads, bindY }: { heads: Head[]; bindY: number }) {
+function StemBatch({ heads, bindY, below = 0.13 }: { heads: Head[]; bindY: number; below?: number }) {
   const mesh = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({ color: GREEN.stem, roughness: 0.5 })
     const m = new THREE.InstancedMesh(mainStemGeo(), mat, heads.length)
@@ -126,14 +127,13 @@ function StemBatch({ heads, bindY }: { heads: Head[]; bindY: number }) {
     heads.forEach((h, i) => {
       const d = h.pos.clone().sub(bind)
       const len = d.length()
-      const below = 0.13
       const start = bind.clone().addScaledVector(d.normalize(), -below)
       m.setMatrixAt(i, new THREE.Matrix4().compose(start, new THREE.Quaternion().setFromUnitVectors(UP, d), new THREE.Vector3(1, len + below, 1)))
     })
     m.castShadow = true
     m.computeBoundingSphere()
     return m
-  }, [heads, bindY])
+  }, [heads, bindY, below])
   useEffect(() => () => { mesh.dispose(); (mesh.material as THREE.Material).dispose() }, [mesh])
   return <primitive object={mesh} />
 }
@@ -225,6 +225,115 @@ function LayeredWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
   )
 }
 
+/** Tall florist cone: one big sheet, high at the back and open at the front. */
+const CONE_Y0 = 0.03
+const CONE_R0 = 0.026
+const coneSlope = (d: Dims) => (d.rimR * 1.12 - CONE_R0) / (d.rimY - CONE_Y0)
+
+function ConeWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
+  const wrap = wrapById(wrapId)
+  const { inner, outer } = useMemo(() => {
+    const slope = coneSlope(dims)
+    const height = dims.rimY - CONE_Y0 + 0.16 + 0.14 * dims.S
+    const frontTop = dims.rimY - 0.06 - 0.03 * dims.S
+    const peak = 1 - (frontTop - CONE_Y0) / height
+    const back = -Math.PI / 2
+    const inner = sheetGeo({ thc: back, span: Math.PI * 2 * 1.02, height, y0: CONE_Y0, r0: CONE_R0, slope, flare: 0.05 + 0.06 * dims.S, peak, seed: 1 })
+    const outer = sheetGeo({ thc: back, span: Math.PI * 2 * 0.72, height: height * 0.9, y0: CONE_Y0, r0: CONE_R0 + 0.005, slope: slope * 1.04, flare: 0.08 + 0.08 * dims.S, peak: peak * 0.96, seed: 4 })
+    return { inner, outer }
+  }, [dims])
+  useEffect(() => () => { inner.dispose(); outer.dispose() }, [inner, outer])
+  return (
+    <group>
+      <mesh geometry={inner} castShadow receiveShadow>
+        <meshPhysicalMaterial color={wrap.inner} roughness={0.72} sheen={0.6} sheenColor="#ffffff" side={THREE.DoubleSide} />
+      </mesh>
+      <mesh geometry={outer} castShadow receiveShadow>
+        <meshPhysicalMaterial color={wrap.outer} roughness={0.66} sheen={0.5} sheenColor="#ffffff" clearcoat={0.15} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Hand-tied: just a small paper collar at the binding, stems show below. */
+const CUFF_R0 = 0.04
+const CUFF_SLOPE = 0.32
+function CuffWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
+  const wrap = wrapById(wrapId)
+  const { inner, outer } = useMemo(() => {
+    const y0 = dims.bindY - 0.06
+    const ring = (count: number, offset: number, h: number, dr: number, flare: number) =>
+      Array.from({ length: count }, (_, i) =>
+        sheetGeo({ thc: offset + (i / count) * Math.PI * 2, span: 1.5, height: h, y0, r0: CUFF_R0 + dr, slope: CUFF_SLOPE, flare, peak: 0.35, seed: i * 2.3 + offset }),
+      )
+    const a = ring(6, 0, 0.15 + 0.04 * dims.S, 0, 0.04)
+    const b = ring(6, 0.5, 0.12 + 0.03 * dims.S, 0.006, 0.06)
+    const inner = mergeGeometries(a)!
+    const outer = mergeGeometries(b)!
+    ;[...a, ...b].forEach((g) => g.dispose())
+    return { inner, outer }
+  }, [dims])
+  useEffect(() => () => { inner.dispose(); outer.dispose() }, [inner, outer])
+  return (
+    <group>
+      <mesh geometry={inner} castShadow receiveShadow>
+        <meshPhysicalMaterial color={wrap.inner} roughness={0.75} sheen={0.5} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh geometry={outer} castShadow receiveShadow>
+        <meshPhysicalMaterial color={wrap.outer} roughness={0.7} sheen={0.4} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
+  )
+}
+
+/** Round hat box (outer = paper colour, lining = inner colour) with a ribbon and bow. Sits on the table. */
+function HatBox({ dims, wrapId, ribbon }: { dims: Dims; wrapId: string; ribbon: string }) {
+  const wrap = wrapById(wrapId)
+  const r = boxRadius(dims)
+  const h = BOX_TOP + 0.06
+  const y = -0.06 + h / 2
+  return (
+    <group>
+      <mesh position-y={y} castShadow receiveShadow>
+        <cylinderGeometry args={[r, r, h, 72, 1, true]} />
+        <meshPhysicalMaterial color={wrap.outer} roughness={0.45} clearcoat={0.35} clearcoatRoughness={0.4} side={THREE.FrontSide} />
+      </mesh>
+      <mesh position-y={y}>
+        <cylinderGeometry args={[r - 0.004, r - 0.004, h, 72, 1, true]} />
+        <meshStandardMaterial color={wrap.inner} roughness={0.8} side={THREE.BackSide} />
+      </mesh>
+      <mesh position-y={BOX_TOP} rotation-x={Math.PI / 2} castShadow>
+        <torusGeometry args={[r - 0.002, 0.004, 8, 72]} />
+        <meshStandardMaterial color={wrap.inner} roughness={0.6} />
+      </mesh>
+      <mesh position-y={-0.058} receiveShadow>
+        <cylinderGeometry args={[r, r, 0.004, 72]} />
+        <meshStandardMaterial color={wrap.outer} roughness={0.6} />
+      </mesh>
+      {/* floral foam / moss just under the flowers */}
+      <mesh position-y={BOX_TOP - 0.012}>
+        <cylinderGeometry args={[r - 0.006, r - 0.006, 0.01, 64]} />
+        <meshStandardMaterial color="#2f4127" roughness={1} />
+      </mesh>
+      {/* ribbon around the box + bow at the front */}
+      <mesh position-y={BOX_TOP - 0.07} castShadow>
+        <cylinderGeometry args={[r + 0.003, r + 0.003, 0.03, 72, 1, true]} />
+        <meshPhysicalMaterial color={ribbon} roughness={0.32} sheen={1} sheenColor="#ffffff" clearcoat={0.25} side={THREE.DoubleSide} />
+      </mesh>
+      <group position={[0, BOX_TOP - 0.07, r + 0.006]}>
+        <Bow color={ribbon} scale={1.0 + dims.S * 0.8} />
+      </group>
+    </group>
+  )
+}
+
+/** Ribbon radius at the binding for each shape. */
+function bandRadius(shape: ShapeId, d: Dims) {
+  if (shape === 'cone') return CONE_R0 + 0.005 + (d.bindY - CONE_Y0) * coneSlope(d) * 1.04 + 0.006
+  if (shape === 'handtied') return CUFF_R0 + 0.006 + 0.06 * CUFF_SLOPE + 0.008
+  return WRAP_R0 + 0.016 + (d.bindY - WRAP_Y0) * wrapSlope(d) * 1.032 + 0.004
+}
+
 // ---------------------------------------------------------------- satin ribbon + bow
 
 function stripGeo(points: THREE.Vector3[], width: (t: number) => number, side: (T: THREE.Vector3, t: number) => THREE.Vector3) {
@@ -281,8 +390,8 @@ function Bow({ color, scale }: { color: string; scale: number }) {
   )
 }
 
-function RibbonBand({ dims, color }: { dims: Dims; color: string }) {
-  const r = WRAP_R0 + 0.016 + (dims.bindY - WRAP_Y0) * wrapSlope(dims) * 1.032 + 0.004
+function RibbonBand({ dims, color, shape }: { dims: Dims; color: string; shape: ShapeId }) {
+  const r = bandRadius(shape, dims)
   return (
     <group position-y={dims.bindY}>
       <mesh castShadow>
@@ -430,6 +539,7 @@ function PopFlower({ head, popKey }: { head: Head; popKey: number }) {
 
 export function GiftBouquet({ design, sway = true, animate = true, interactive = false }: { design: GiftDesign; sway?: boolean; animate?: boolean; interactive?: boolean }) {
   const { heads, dims } = useMemo(() => buildHeads(design.items), [design.items])
+  const shape = design.shape
   const pop = useUI((s) => (interactive ? s.pop : null))
   const popHead = pop && pop.index < heads.length ? heads[pop.index] : null
   const batched = useMemo(() => (popHead ? heads.filter((h) => h !== popHead) : heads), [heads, popHead])
@@ -460,12 +570,14 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
 
   return (
     <group ref={root}>
-      <Stand id={design.stand} />
-      <group position-y={standLift(design.stand)}>
-      <LayeredWrap dims={dims} wrapId={design.wrap} />
+      {shape === 'box' ? <HatBox dims={dims} wrapId={design.wrap} ribbon={design.ribbon} /> : <Stand id={design.stand} />}
+      <group position-y={bouquetLift(shape, design.stand, dims)}>
+      {shape === 'korean' && <LayeredWrap dims={dims} wrapId={design.wrap} />}
+      {shape === 'cone' && <ConeWrap dims={dims} wrapId={design.wrap} />}
+      {shape === 'handtied' && <CuffWrap dims={dims} wrapId={design.wrap} />}
       <group ref={flowers} position-y={dims.bindY}>
         <group position-y={-dims.bindY}>
-          <StemBatch heads={heads} bindY={dims.bindY} />
+          <StemBatch heads={heads} bindY={dims.bindY} below={shape === 'handtied' ? 0.2 : 0.13} />
           <FoliageBase dims={dims} count={heads.length} />
           <FlowerBatch heads={batched} />
           {popHead && pop && <PopFlower head={popHead} popKey={pop.key} />}
@@ -473,7 +585,7 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
           {interactive && <Markers heads={heads} />}
         </group>
       </group>
-      <RibbonBand dims={dims} color={design.ribbon} />
+      {shape !== 'box' && <RibbonBand dims={dims} color={design.ribbon} shape={shape} />}
       </group>
     </group>
   )
