@@ -71,7 +71,7 @@ function CeramicCup() {
 }
 
 /** Clear glass cylinder with water and a bundle of stems. */
-function GlassVase() {
+function GlassVase({ ownStems = true }: { ownStems?: boolean }) {
   const glass = useGeo(() =>
     lathe([[0, -0.06], [0.07, -0.06], [0.074, -0.054], [0.076, 0.1], [0.082, 0.128], [0.078, 0.13], [0.07, 0.1], [0.066, -0.05], [0, -0.05]]),
   )
@@ -92,9 +92,11 @@ function GlassVase() {
   })
   return (
     <group>
-      <mesh geometry={stems} castShadow>
-        <meshStandardMaterial color="#5f7f4a" roughness={0.6} />
-      </mesh>
+      {ownStems && (
+        <mesh geometry={stems} castShadow>
+          <meshStandardMaterial color="#5f7f4a" roughness={0.6} />
+        </mesh>
+      )}
       <mesh position-y={-0.005}>
         <cylinderGeometry args={[0.064, 0.064, 0.09, 48]} />
         <meshPhysicalMaterial color="#dff0ee" transmission={1} roughness={0.05} thickness={0.06} ior={1.33} transparent opacity={0.55} />
@@ -176,12 +178,13 @@ function mergeAll(parts: THREE.BufferGeometry[]) {
   return out
 }
 
-export function Stand({ id }: { id: StandId }) {
+/** `ownStems`: the glass vase shows a stem bundle unless the bouquet already brings its own (hand-tied / posy). */
+export function Stand({ id, ownStems = true }: { id: StandId; ownStems?: boolean }) {
   switch (id) {
     case 'ceramic':
       return <CeramicCup />
     case 'glass':
-      return <GlassVase />
+      return <GlassVase ownStems={ownStems} />
     case 'basket':
       return <Basket />
     case 'box':
