@@ -10,7 +10,7 @@ import { cylGeo, petalGeo, sphereGeo } from '../three/geometry'
 export type FlowerType =
   | 'rose' | 'tulip' | 'peony' | 'sunflower' | 'hydrangea' | 'lily' | 'carnation'
   | 'orchid' | 'gerbera' | 'babysBreath' | 'eucalyptus' | 'fern' | 'ruscus'
-  | 'daisy' | 'chrysanthemum' | 'ranunculus' | 'lisianthus' | 'calla' | 'marigold' | 'lavender' | 'jasmine'
+  | 'daisy' | 'chrysanthemum' | 'ranunculus' | 'lisianthus' | 'calla' | 'lavender' | 'jasmine'
 
 export type Role = 'petal' | 'center' | 'leaf' | 'stem' | 'accent'
 export type BloomStage = 'bud' | 'half' | 'full'
@@ -426,11 +426,6 @@ const calla: FlowerDef['build'] = (open) => [
   { geo: cylGeo(), role: 'center', matrices: [segM(V(-0.004, 0, 0), V(-0.006, 0.046, 0), 0.0035)] },
 ]
 
-const marigold: FlowerDef['build'] = (open, rnd) => [
-  { geo: petalGeo('heart', 0.7, -0.02, 1.3), role: 'petal', matrices: ring(open, rnd, { n: 85, spiral: true, len: [0.01, 0.02], width: [1.0, 1.1], phiClosed: [5, 40], phiOpen: [10, 112], radius: [0.001, 0.012], y: [0.014, 0.002] }) },
-  stemLeaves(rnd, 2, 0.05, 0.3),
-]
-
 const lavender: FlowerDef['build'] = (open, rnd) => {
   const florets: THREE.Matrix4[] = []
   for (let i = 0; i < 16; i++) {
@@ -496,7 +491,6 @@ export const FLOWERS: Record<FlowerType, FlowerDef> = {
   ranunculus: { type: 'ranunculus', name: 'Ranunculus', latin: 'Ranunculus', category: 'flower', colors: { petal: '#f4a38c', petal2: '#fde1d4', gradient: 0.55, center: '#7d9a52' }, headRadius: 0.042, heightBias: -0.005, centerBias: 0.4, glyph: { petals: 10, kind: 'round' }, build: ranunculus },
   lisianthus: { type: 'lisianthus', name: 'Lisianthus', latin: 'Eustoma', category: 'flower', colors: { petal: '#fbf7fb', petal2: '#8e5aa8', gradient: 0.75, center: '#d9d48a' }, headRadius: 0.045, heightBias: 0.02, centerBias: 0.45, glyph: { petals: 5, kind: 'round' }, build: lisianthus },
   calla: { type: 'calla', name: 'Calla Lily', latin: 'Zantedeschia', category: 'flower', colors: { petal: '#fbf8f1', petal2: '#f2ead2', gradient: 0.3, center: '#f2c94c' }, headRadius: 0.04, heightBias: 0.04, centerBias: 0.35, glyph: { petals: 1, kind: 'cup' }, build: calla },
-  marigold: { type: 'marigold', name: 'Marigold', latin: 'Tagetes', category: 'flower', colors: { petal: '#f39a1e', petal2: '#ffc54d', gradient: 0.45, center: '#c46a10' }, headRadius: 0.045, heightBias: 0, centerBias: 0.45, glyph: { petals: 12, kind: 'round' }, build: marigold },
   babysBreath: { type: 'babysBreath', name: "Baby's Breath", latin: 'Gypsophila', category: 'filler', colors: { petal: '#fbfaf4', petal2: '#ffffff', gradient: 0.2, center: '#e8e4d0' }, headRadius: 0.06, heightBias: 0.03, centerBias: 0.8, glyph: { petals: 0, kind: 'spray' }, build: babysBreath },
   eucalyptus: { type: 'eucalyptus', name: 'Eucalyptus', latin: 'Eucalyptus', category: 'filler', colors: { petal: '#8aa597', petal2: '#bccdc2', gradient: 0.4, center: '#6f8a7c' }, headRadius: 0.05, heightBias: 0.05, centerBias: 0.75, glyph: { petals: 0, kind: 'leafy' }, build: eucalyptus },
   fern: { type: 'fern', name: 'Fern', latin: 'Rumohra', category: 'filler', colors: { petal: '#4c7a42', petal2: '#7fa66b', gradient: 0.5, center: '#3f6a35' }, headRadius: 0.06, heightBias: 0.03, centerBias: 0.9, glyph: { petals: 0, kind: 'frond' }, build: fern },
