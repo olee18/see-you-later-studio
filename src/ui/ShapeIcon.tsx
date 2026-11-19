@@ -40,6 +40,43 @@ export function ShapeIcon({ id, size = 56 }: { id: ShapeId; size?: number }) {
           <rect x="22" y="33" width="12" height="3" rx="1.5" fill="#e98fa3" />
         </svg>
       )
+    case 'posy':
+      return (
+        <svg {...common}>
+          <path d="M8 26 Q12 34 18 30 Q22 36 28 32 Q34 36 38 30 Q44 34 48 26 Q40 36 28 37 Q16 36 8 26 Z" fill="#fff" stroke="#d9cfc4" strokeWidth="1" />
+          {blooms(28, 20, 6)}
+          <rect x="25" y="36" width="6" height="16" rx="3" fill="#f2a7b8" />
+          <circle cx="28" cy="37" r="2.6" fill="#e98fa3" />
+        </svg>
+      )
+    case 'heartbox':
+      return (
+        <svg {...common}>
+          {blooms(28, 22, 6)}
+          <path d="M28 52 C20 46 8 40 9 30 C10 24 18 23 22 27 L28 31 L34 27 C38 23 46 24 47 30 C48 40 36 46 28 52 Z" fill="#c2607a" />
+          <circle cx="28" cy="46" r="2.6" fill="#f4c3cd" />
+        </svg>
+      )
+    case 'bag':
+      return (
+        <svg {...common}>
+          <path d="M20 22 Q20 12 28 12 Q36 12 36 22" fill="none" stroke="#b88f58" strokeWidth="2" />
+          {blooms(28, 20, 6)}
+          <rect x="13" y="26" width="30" height="24" rx="1.5" fill="#d3ad80" />
+          <rect x="13" y="26" width="30" height="4" fill="#f3e4d0" />
+          <circle cx="28" cy="36" r="2.6" fill="#e98fa3" />
+        </svg>
+      )
+    case 'bucket':
+      return (
+        <svg {...common}>
+          <path d="M11 24 Q28 4 45 24" fill="none" stroke="#9aa3a8" strokeWidth="1.6" />
+          {blooms(28, 20, 6)}
+          <path d="M12 27 H44 L40 50 H16 Z" fill="#c3cacd" stroke="#9aa3a8" strokeWidth="1.2" />
+          <path d="M12 27 Q16 22 20 27 Q24 22 28 27 Q32 22 36 27 Q40 22 44 27" fill="#f4c3cd" />
+          <rect x="13.5" y="36" width="29" height="3.2" fill="#f2a7b8" />
+        </svg>
+      )
     case 'box':
       return (
         <svg {...common}>

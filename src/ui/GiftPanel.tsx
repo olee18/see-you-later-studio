@@ -6,7 +6,7 @@ import { useDesign, useUI } from '../state/store'
 import { BouquetThumb } from './BouquetThumb'
 import { StandIcon } from './StandIcon'
 import { ShapeIcon } from './ShapeIcon'
-import { SHAPES } from '../gift/shapes'
+import { SHAPES, isContainer } from '../gift/shapes'
 import { STANDS } from '../gift/stands'
 import type { StrKey } from '../i18n'
 import { FlowerLibrary } from './FlowerLibrary'
@@ -75,7 +75,7 @@ function Paper() {
         ))}
       </div>
       <h3 className="step-title">{t('stand')}</h3>
-      {shape === 'box' ? (
+      {isContainer(shape) ? (
         <p className="muted box-note">{t('boxNoStand')}</p>
       ) : (
       <div className="stand-row" role="radiogroup" aria-label={t('stand')}>
@@ -87,7 +87,7 @@ function Paper() {
         ))}
       </div>
       )}
-      <h3 className="step-title">{shape === 'box' ? t('boxColour') : t('wrapping')}</h3>
+      <h3 className="step-title">{isContainer(shape) ? t('boxColour') : t('wrapping')}</h3>
       <div className="wrap-row" role="radiogroup" aria-label={t('wrapping')}>
         {WRAPS.map((w) => (
           <button key={w.id} role="radio" aria-checked={w.id === wrap} className={`wrap-chip ${w.id === wrap ? 'is-on' : ''}`} onClick={() => update({ wrap: w.id })} title={color(w.name)}>
