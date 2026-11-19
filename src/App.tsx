@@ -98,19 +98,44 @@ function LangCycle() {
   )
 }
 
+export const BRAND = 'SEE YOU LATER · STUDIO'
+
+/** Start-screen top bar: wordmark + language. */
+function TopBar() {
+  const mode = useUI((s) => s.mode)
+  return (
+    <header className={`topbar ${mode === 'hero' ? 'is-on' : ''}`} aria-hidden={mode !== 'hero'}>
+      <span className="wordmark">
+        SEE YOU LATER <i>·</i> STUDIO
+      </span>
+      <LangSwitch tabbable={mode === 'hero'} />
+    </header>
+  )
+}
+
 function Hero() {
   const mode = useUI((s) => s.mode)
   const { t } = useT()
   return (
     <section className={`hero ${mode === 'hero' ? 'is-on' : ''}`} aria-hidden={mode !== 'hero'}>
-      <LangSwitch tabbable={mode === 'hero'} />
-      <p className="eyebrow">{t('eyebrow')}</p>
-      <h1>
-        Bloom
-        <br />
-        Studio
+      <p className="eyebrow">✿ {t('eyebrow')}</p>
+      <h1 aria-label={BRAND}>
+        <span className="h1-main">See You Later</span>
+        <span className="h1-sub">
+          <i />
+          STUDIO
+          <i />
+        </span>
       </h1>
       <p className="lede">{t('lede')}</p>
+      <ol className="steps">
+        {(['step1', 'step2', 'step3'] as const).map((k, i) => (
+          <li key={k}>
+            <b>{i + 1}</b>
+            <span>{t(k)}</span>
+          </li>
+        ))}
+      </ol>
       <div className="hero-actions">
         <button
           className="btn primary big"
@@ -202,7 +227,10 @@ export default function App() {
       <div className="canvas-wrap">
         <Scene />
       </div>
-      <div className="brand">Bloom Studio</div>
+      <div className="brand">
+        SEE YOU LATER <i>·</i> STUDIO
+      </div>
+      <TopBar />
       <Hero />
       <div className="studio-ui" aria-hidden={mode !== 'arrange'}>
         <GiftPanel />
