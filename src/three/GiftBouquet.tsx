@@ -200,8 +200,8 @@ function LayeredWrap({ dims, wrapId }: { dims: Dims; wrapId: string }) {
         const thc = offset + (i / count) * Math.PI * 2
         return sheetGeo({ thc, span, height: (base + lift) * frontBack(thc), y0: WRAP_Y0, r0: WRAP_R0 + dr, slope: slope * (1 + dr * 2), flare, peak, seed: i * 1.7 + offset })
       })
-    const innerSheets = ring(6, 0, 1.45, 0.07 + 0.14 * S, 0.04 + 0.08 * S, 0, 0.42)
-    const midSheets = ring(7, 0.45, 1.3, 0.03 + 0.08 * S, 0.07 + 0.14 * S, 0.008, 0.38)
+    const innerSheets = ring(6, 0, 1.45, 0.01 + 0.2 * S, 0.04 + 0.08 * S, 0, 0.42)
+    const midSheets = ring(7, 0.45, 1.3, -0.01 + 0.12 * S, 0.07 + 0.14 * S, 0.008, 0.38)
     const skirt = ring(5, 0.2, 1.75, -0.02, 0.11 + 0.2 * S, 0.016, 0.3)
     const inner = mergeGeometries(innerSheets)!
     const outer = mergeGeometries([...midSheets, ...skirt])!
@@ -404,10 +404,45 @@ function Markers({ heads }: { heads: Head[] }) {
   )
 }
 
+/** The flower you just added grows into its spot, then joins the main batch. */
+function PopFlower({ head, popKey }: { head: Head; popKey: number }) {
+  const g = useRef<THREE.Group>(null!)
+  const heads = useMemo(() => [{ ...head, pos: new THREE.Vector3() }], [head])
+  useLayoutEffect(() => {
+    const s = { v: 0.01, lift: 0.06 }
+    const apply = () => {
+      g.current.scale.setScalar(s.v)
+      g.current.position.copy(head.pos).addScaledVector(head.dir, s.lift)
+    }
+    apply()
+    const done = () => {
+      const ui = useUI.getState()
+      if (ui.pop?.key === popKey) ui.set({ pop: null })
+    }
+    if (useUI.getState().reducedMotion) {
+      done()
+      return
+    }
+    const tl = gsap.timeline({ onUpdate: apply, onComplete: done })
+    tl.to(s, { v: 1, duration: 0.55, ease: 'back.out(1.8)' }, 0).to(s, { lift: 0, duration: 0.6, ease: 'power3.out' }, 0)
+    return () => {
+      tl.kill()
+    }
+  }, [head, popKey])
+  return (
+    <group ref={g}>
+      <FlowerBatch heads={heads} />
+    </group>
+  )
+}
+
 // ---------------------------------------------------------------- bouquet
 
 export function GiftBouquet({ design, sway = true, animate = true, interactive = false }: { design: GiftDesign; sway?: boolean; animate?: boolean; interactive?: boolean }) {
   const { heads, dims } = useMemo(() => buildHeads(design.items), [design.items])
+  const pop = useUI((s) => (interactive ? s.pop : null))
+  const popHead = pop && pop.index < heads.length ? heads[pop.index] : null
+  const batched = useMemo(() => (popHead ? heads.filter((h) => h !== popHead) : heads), [heads, popHead])
   const flowers = useRef<THREE.Group>(null!)
   const root = useRef<THREE.Group>(null!)
   const lastCount = useRef(heads.length)
@@ -416,10 +451,11 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
   useLayoutEffect(() => {
     const delta = Math.abs(heads.length - lastCount.current)
     lastCount.current = heads.length
-    if (!animate) return
-    const s = { v: delta > 2 ? 0.86 : 0.975 }
+    // single additions get their own grow-in instead of a whole-bouquet bounce
+    if (!animate || delta <= 1) return
+    const s = { v: 0.86 }
     flowers.current.scale.setScalar(s.v)
-    const tw = gsap.to(s, { v: 1, duration: delta > 2 ? 0.8 : 0.45, ease: 'back.out(1.6)', onUpdate: () => flowers.current?.scale.setScalar(s.v) })
+    const tw = gsap.to(s, { v: 1, duration: 0.8, ease: 'back.out(1.6)', onUpdate: () => flowers.current?.scale.setScalar(s.v) })
     return () => {
       tw.kill()
       flowers.current?.scale.setScalar(1)
@@ -440,7 +476,8 @@ export function GiftBouquet({ design, sway = true, animate = true, interactive =
         <group position-y={-dims.bindY}>
           <StemBatch heads={heads} bindY={dims.bindY} />
           <FoliageBase dims={dims} />
-          <FlowerBatch heads={heads} />
+          <FlowerBatch heads={batched} />
+          {popHead && pop && <PopFlower head={popHead} popKey={pop.key} />}
           {interactive && <PickProxy heads={heads} />}
           {interactive && <Markers heads={heads} />}
         </group>

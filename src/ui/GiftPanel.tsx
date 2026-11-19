@@ -6,7 +6,6 @@ import { useDesign, useUI } from '../state/store'
 import { BouquetThumb } from './BouquetThumb'
 import { FlowerLibrary } from './FlowerLibrary'
 
-type Tab = 'templates' | 'flowers' | 'paper'
 
 function Templates() {
   const design = useDesign((s) => s.design)
@@ -14,7 +13,7 @@ function Templates() {
   const [size, setSize] = useState<SizeId>('M')
   return (
     <>
-      <p className="muted small">Start from a ready-made bouquet, then make it yours in the Flowers tab.</p>
+      <p className="muted small">Short on time? Start from a ready-made bouquet, then change any flower in <b>Arrange flowers</b>. (You can undo with ↶.)</p>
       <div className="size-row compact" role="radiogroup" aria-label="Template size">
         {SIZES.map((s) => (
           <button key={s.id} role="radio" aria-checked={s.id === size} className={`size-chip ${s.id === size ? 'is-on' : ''}`} onClick={() => setSize(s.id)}>
@@ -31,7 +30,7 @@ function Templates() {
             <span className="style-thai">{s.thai}</span>
           </button>
         ))}
-        <button className="style-card empty" onClick={() => { startEmpty(); useUI.getState().notify('Empty bouquet — add flowers from the Flowers tab') }}>
+        <button className="style-card empty" onClick={() => { startEmpty(); useUI.getState().set({ tab: 'flowers' }) }}>
           <span className="empty-plus">+</span>
           <span className="style-name">Start empty</span>
           <span className="style-thai">จัดเองตั้งแต่เริ่ม</span>
@@ -115,32 +114,33 @@ function SelectedFlower() {
 export function GiftPanel() {
   const design = useDesign((s) => s.design)
   const name = useDesign((s) => s.bouquets.find((b) => b.id === s.currentId)?.name)
-  const [tab, setTab] = useState<Tab>('templates')
+  const tab = useUI((s) => s.tab)
+  const setTab = (t: typeof tab) => useUI.getState().set({ tab: t })
   const style = styleById(design.style)
   return (
     <aside className="panel gift-panel" aria-label="Create your bouquet">
       <header className="panel-head row">
         <div>
           <h2>{name ?? 'My Bouquet'}</h2>
-          <p className="muted">{style ? style.thai : 'จัดเอง'} · {design.items.length} flowers</p>
+          <p className="muted">{style ? style.thai : 'จัดเอง · arranged by you'} · {design.items.length} flowers</p>
         </div>
         <button className="btn ghost sm" onClick={() => useDesign.getState().surprise()} title="Pick a random bouquet">
           ✦ Surprise me
         </button>
       </header>
       <div className="tabs" role="tablist">
-        {([['templates', 'Ready-made'], ['flowers', 'Flowers'], ['paper', 'Paper & Bow']] as [Tab, string][]).map(([v, t]) => (
+        {([['flowers', 'Arrange flowers'], ['templates', 'Ready-made'], ['paper', 'Paper & Bow']] as [typeof tab, string][]).map(([v, t]) => (
           <button key={v} role="tab" aria-selected={tab === v} className={tab === v ? 'is-on' : ''} onClick={() => setTab(v)}>
             {t}
           </button>
         ))}
       </div>
-      <SelectedFlower />
       <div className="gift-body">
         {tab === 'templates' && <Templates />}
         {tab === 'flowers' && <FlowerLibrary />}
         {tab === 'paper' && <Paper />}
       </div>
+      <SelectedFlower />
     </aside>
   )
 }

@@ -3,7 +3,7 @@ import { createJSONStorage, persist, type StateStorage } from 'zustand/middlewar
 import type { FlowerType, StemColors } from '../data/flowers'
 import { MAX_ITEMS } from '../gift/layout'
 import {
-  STYLES, defaultGift, emptyGift, giftFromStyle, makeItem, randomGift, sanitizeGift, styleById,
+  STYLES, emptyGift, giftFromStyle, makeItem, randomGift, sanitizeGift, styleById,
   type GiftDesign, type SizeId,
 } from '../gift/styles'
 
@@ -25,6 +25,13 @@ interface DesignState {
   design: GiftDesign
   currentId: string
   bouquets: SavedBouquet[]
+  /** undo / redo stacks for the current bouquet (not saved) */
+  past: GiftDesign[]
+  future: GiftDesign[]
+  undo: () => void
+  redo: () => void
+  /** open an empty bouquet to arrange from scratch (reuses the current one if it is empty) */
+  arrangeFromScratch: () => void
   // paper / ribbon / card
   update: (patch: Partial<Pick<GiftDesign, 'wrap' | 'ribbon' | 'card'>>) => void
   // starting points
@@ -64,7 +71,7 @@ function uniqueName(list: SavedBouquet[], base: string, exceptId?: string) {
 
 const baseName = (d: GiftDesign) => styleById(d.style)?.name ?? 'My Bouquet'
 
-function fresh(design = defaultGift(), list: SavedBouquet[] = []): SavedBouquet {
+function fresh(design = emptyGift(), list: SavedBouquet[] = []): SavedBouquet {
   return { id: uid(), name: uniqueName(list, baseName(design)), updatedAt: Date.now(), autoName: true, design }
 }
 
@@ -74,24 +81,49 @@ const full = () => useUI.getState().notify(`You can keep up to ${MAX_BOUQUETS} b
 export const useDesign = create<DesignState>()(
   persist(
     (set, get) => {
-      const commit = (design: GiftDesign) => {
-        const { currentId, bouquets } = get()
+      const commit = (design: GiftDesign, record = true) => {
+        const { currentId, bouquets, past, design: prev } = get()
         set({
           design,
+          ...(record ? { past: [...past, prev].slice(-60), future: [] } : {}),
           bouquets: bouquets.map((b) =>
             b.id === currentId ? { ...b, design, updatedAt: Date.now(), name: b.autoName ? uniqueName(bouquets, baseName(design), b.id) : b.name } : b,
           ),
         })
       }
       const open = (b: SavedBouquet, list: SavedBouquet[]) => {
-        set({ bouquets: list, currentId: b.id, design: b.design })
-        useUI.getState().set({ selected: null })
+        set({ bouquets: list, currentId: b.id, design: b.design, past: [], future: [] })
+        useUI.getState().set({ selected: null, pop: null })
       }
       const keepCard = (d: GiftDesign) => ({ ...d, card: get().design.card })
       return {
         design: initial.design,
         currentId: initial.id,
         bouquets: [initial],
+        past: [],
+        future: [],
+        undo: () => {
+          const { past, future, design } = get()
+          if (!past.length) return
+          set({ past: past.slice(0, -1), future: [design, ...future].slice(0, 60) })
+          commit(past[past.length - 1], false)
+          useUI.getState().set({ selected: null, pop: null })
+        },
+        redo: () => {
+          const { past, future, design } = get()
+          if (!future.length) return
+          set({ future: future.slice(1), past: [...past, design].slice(-60) })
+          commit(future[0], false)
+          useUI.getState().set({ selected: null, pop: null })
+        },
+        arrangeFromScratch: () => {
+          const st = get()
+          if (st.design.items.length === 0) return
+          if (st.bouquets.length >= MAX_BOUQUETS) return full()
+          const d = emptyGift()
+          const b: SavedBouquet = { id: uid(), name: uniqueName(st.bouquets, 'My Bouquet'), updatedAt: Date.now(), autoName: true, design: d }
+          open(b, [b, ...st.bouquets])
+        },
 
         update: (patch) => commit({ ...get().design, ...patch }),
 
@@ -117,12 +149,15 @@ export const useDesign = create<DesignState>()(
           }
           const it = makeItem(type, colors)
           const items = [...d.items]
+          let at = items.length
           if (slot != null && slot < items.length) {
             // the new flower takes that spot; the one that was there moves to the rim
             items.push(items[slot])
             items[slot] = it
+            at = slot
           } else items.push(it)
           commit({ ...d, items })
+          useUI.getState().set({ selected: null, pop: { index: at, key: Date.now() } })
           return true
         },
         removeItem: (i) => {
@@ -224,6 +259,9 @@ interface UIState {
   dragHead: number | null
   /** slot the dragged flower would land in (preview ring) */
   dropSlot: number | null
+  /** the flower that was just added (plays its grow-in) */
+  pop: { index: number; key: number } | null
+  tab: 'flowers' | 'templates' | 'paper'
   set: (p: Partial<Omit<UIState, 'set' | 'notify'>>) => void
   notify: (msg: string) => void
 }
@@ -238,6 +276,8 @@ export const useUI = create<UIState>()((set) => ({
   libDrag: null,
   dragHead: null,
   dropSlot: null,
+  pop: null,
+  tab: 'flowers',
   set: (p) => set(p),
   notify: (msg) => set({ toast: { msg, key: Date.now() } }),
 }))

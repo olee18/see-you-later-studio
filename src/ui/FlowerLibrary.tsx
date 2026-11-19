@@ -63,11 +63,7 @@ function startDrag(e: React.PointerEvent, type: FlowerType, colors: StemColors) 
 }
 
 function add(type: FlowerType, colors: StemColors, slot: number | null) {
-  const ok = useDesign.getState().addItem(type, colors, slot)
-  if (ok) {
-    const items = useDesign.getState().design.items
-    useUI.getState().set({ selected: slot != null && slot < items.length - 1 ? slot : items.length - 1 })
-  }
+  useDesign.getState().addItem(type, colors, slot)
 }
 
 function Row({ type }: { type: FlowerType }) {
@@ -104,7 +100,7 @@ export function FlowerLibrary() {
   return (
     <div className="flower-lib">
       <p className="muted small">
-        Tap a colour to add that flower, or drag it onto the bouquet to place it exactly. Tap a flower in the bouquet to change or remove it — drag it to move it.
+        Build it one flower at a time: <b>tap a colour</b> to add that flower, or <b>drag it onto the bouquet</b> to place it exactly. Tap a flower in the bouquet to recolour or remove it — drag it to move it.
       </p>
       <div className="lib-count">
         <span>{count} flowers</span>

@@ -21,7 +21,14 @@ function useKeyboard() {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA') return
       const ui = useUI.getState()
-      if (ui.mode !== 'arrange' || ui.selected == null) return
+      if (ui.mode !== 'arrange') return
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) useDesign.getState().redo()
+        else useDesign.getState().undo()
+        return
+      }
+      if (ui.selected == null) return
       if (e.key === 'Delete' || e.key === 'Backspace') {
         e.preventDefault()
         useDesign.getState().removeItem(ui.selected)
@@ -30,6 +37,18 @@ function useKeyboard() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+}
+
+/** If they already have a bouquet in progress, let them jump back in. */
+function ContinueLink() {
+  const name = useDesign((s) => s.bouquets.find((b) => b.id === s.currentId)?.name)
+  const n = useDesign((s) => s.design.items.length)
+  if (!n) return null
+  return (
+    <button className="link-btn" onClick={() => useUI.getState().set({ mode: 'arrange', tab: 'flowers' })}>
+      Continue “{name}” ({n} flowers) →
+    </button>
+  )
 }
 
 function Hero() {
@@ -42,11 +61,52 @@ function Hero() {
         <br />
         Studio
       </h1>
-      <p className="lede">Start from a beautiful ready-made bouquet or arrange your own flower by flower — then choose the paper and the bow, and surprise the one you love.</p>
-      <button className="btn primary big" onClick={() => useUI.getState().set({ mode: 'arrange' })} tabIndex={mode === 'hero' ? 0 : -1}>
-        Create a bouquet
-      </button>
+      <p className="lede">Arrange your own bouquet one flower at a time — every flower, every colour, your choice. Then wrap it, tie the bow, and surprise the one you love.</p>
+      <div className="hero-actions">
+        <button
+          className="btn primary big"
+          onClick={() => {
+            useDesign.getState().arrangeFromScratch()
+            useUI.getState().set({ mode: 'arrange', tab: 'flowers' })
+          }}
+          tabIndex={mode === 'hero' ? 0 : -1}
+        >
+          Arrange my own bouquet
+        </button>
+        <button className="btn ghost big" onClick={() => useUI.getState().set({ mode: 'arrange', tab: 'templates' })} tabIndex={mode === 'hero' ? 0 : -1}>
+          Start from a ready-made one
+        </button>
+      </div>
+      <ContinueLink />
     </section>
+  )
+}
+
+function UndoRedo() {
+  const canUndo = useDesign((s) => s.past.length > 0)
+  const canRedo = useDesign((s) => s.future.length > 0)
+  return (
+    <>
+      <button className="btn ghost icon" disabled={!canUndo} onClick={() => useDesign.getState().undo()} aria-label="Undo" title="Undo (Ctrl/⌘ Z)">
+        ↶
+      </button>
+      <button className="btn ghost icon" disabled={!canRedo} onClick={() => useDesign.getState().redo()} aria-label="Redo" title="Redo (Ctrl/⌘ Shift Z)">
+        ↷
+      </button>
+    </>
+  )
+}
+
+function EmptyHint() {
+  const n = useDesign((s) => s.design.items.length)
+  const mode = useUI((s) => s.mode)
+  const busy = useUI((s) => s.cameraBusy)
+  if (n > 0 || mode !== 'arrange' || busy) return null
+  return (
+    <div className="empty-hint">
+      <strong>Your bouquet starts here</strong>
+      <span>Tap a colour in the flower list to add your first flower — or drag it right onto the bouquet.</span>
+    </div>
   )
 }
 
@@ -57,6 +117,7 @@ function Toolbar() {
         ←<span className="desk-only"> Studio</span>
       </button>
       <BouquetSwitcher />
+      <UndoRedo />
     </div>
   )
 }
@@ -89,6 +150,7 @@ export default function App() {
       <div className="studio-ui" aria-hidden={mode !== 'arrange'}>
         <GiftPanel />
         <Toolbar />
+        <EmptyHint />
       </div>
       <DragGhost />
       <Toast />
